@@ -14,6 +14,7 @@ import {
   Users,
   Shield,
 } from "lucide-react";
+import logo from "../assets/logo.png";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -63,7 +64,6 @@ const Login = () => {
     <div className="min-h-screen flex bg-slate-50">
       {/* Left Hero Section - Desktop Only */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-gradient-to-br from-slate-900 via-orange-900/80 to-orange-700">
-        {" "}
         {/* Animated Background Elements */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
@@ -76,21 +76,25 @@ const Login = () => {
             style={{ animationDelay: "0.5s" }}
           ></div>
         </div>
+
         {/* Content */}
         <div className="relative flex gap-3 flex-col z-10 max-w-lg mx-auto px-10 text-white">
           {/* Logo */}
-          <div className="mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10">
-                <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">ED</span>
-                </div>
-              </div>
+          <div className="mb-6">
+            <div className="inline-flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-3xl px-5 py-4">
+              <img
+                src={logo}
+                alt="EquipmentsDekho"
+                className="h-12 w-auto object-contain"
+              />
+
+              <div className="w-px h-10 bg-white/20"></div>
+
               <div>
-                <h2 className="text-2xl font-bold">EquipmentsDekho</h2>
-                <p className="text-sm text-orange-100 font-medium">
-                  Partner Portal
-                </p>
+                <h2 className="text-xl font-bold text-white leading-none">
+                  EquipmentsDekho
+                </h2>
+                <p className="text-sm text-orange-100 mt-1">Partner Portal</p>
               </div>
             </div>
           </div>
@@ -108,15 +112,13 @@ const Login = () => {
 
           {/* Feature Cards */}
           <div className="space-y-5">
-            {/* Feature 1 */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
+            <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-white/20 transition-all duration-300">
                   <BarChart3 className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">
-                    {" "}
                     Real-time Analytics
                   </h3>
                   <p className="text-xs text-orange-100">
@@ -126,8 +128,7 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Feature 2 */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-3xl p-5 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
+            <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-white/20 transition-all duration-300">
                   <Users className="w-5 h-5 text-white" />
@@ -141,8 +142,7 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Feature 3 */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-3xl p-5 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
+            <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-white/20 transition-all duration-300">
                   <Shield className="w-5 h-5 text-white" />
@@ -183,7 +183,7 @@ const Login = () => {
           <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 lg:p-10">
             {/* Header */}
             <div className="mb-10">
-              <h1 className="text-4xl font-bold tracking-tight text-slate-900 mb-2 ">
+              <h1 className="text-4xl font-bold tracking-tight text-slate-900 mb-2">
                 Welcome Back
               </h1>
               <p className="text-slate-500">
@@ -203,11 +203,8 @@ const Login = () => {
                   <input
                     type="email"
                     placeholder="you@example.com"
-                    className={`h-12 w-full rounded-xl border bg-white pl-11 pr-4 transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-100 hover:border-slate-300 ${
-                      errors.email
-                        ? "border-red-300 focus:ring-red-100"
-                        : "border-slate-200"
-                    }`}
+                    className={`h-12 w-full rounded-xl border bg-white pl-11 pr-4 transition-all duration-200 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-orange-500 hover:border-slate-300 
+                      ${errors.email ? "border-red-300 focus:border-red-400" : "border-slate-200"}`}
                     {...register("email", {
                       required: "Email is required",
                       pattern: {
@@ -234,9 +231,9 @@ const Login = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className={`h-12 w-full rounded-xl border bg-white pl-11 pr-11 transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-100 hover:border-slate-300 ${
+                    className={`h-12 w-full rounded-xl border bg-white pl-11 pr-11 transition-all duration-200 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-orange-500 hover:border-slate-300 ${
                       errors.password
-                        ? "border-red-300 focus:ring-red-100"
+                        ? "border-red-300 focus:border-red-400"
                         : "border-slate-200"
                     }`}
                     {...register("password", {
@@ -271,7 +268,7 @@ const Login = () => {
                 <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer"
                     {...register("remember")}
                   />
                   <span className="ml-2 text-sm text-slate-600">
@@ -290,7 +287,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="h-12 w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 font-semibold text-white transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="h-12 w-full cursor-pointer rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 font-semibold text-white transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>
@@ -305,7 +302,6 @@ const Login = () => {
 
             {/* Divider */}
             <div className="border-t border-slate-200 mt-10 pt-6">
-              {/* Register Link */}
               <p className="text-center text-slate-600">
                 Don't have an account?{" "}
                 <Link

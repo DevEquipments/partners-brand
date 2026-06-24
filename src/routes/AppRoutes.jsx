@@ -1,19 +1,23 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import PrivateRoute from '../components/PrivateRoute';
-import DashboardLayout from '../layouts/DashboardLayout';
-import Login from '../pages/Login';
-import Register from '../pages/Register';
-import ForgotPassword from '../pages/ForgotPassword';
-import Dashboard from '../pages/Dashboard';
-import Profile from '../pages/Profile';
+import { Routes, Route, Navigate } from "react-router-dom";
+import PrivateRoute from "../components/PrivateRoute";
+import PublicRoute from "../components/PublicRoute";
+import DashboardLayout from "../layouts/DashboardLayout";
+
+import Login from "../pages/Login";
+import Register from "../pages/Register";
+import ForgotPassword from "../pages/ForgotPassword";
+import Dashboard from "../pages/Dashboard";
+import Profile from "../pages/Profile";
 
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+      </Route>
 
       {/* Protected Routes */}
       <Route element={<PrivateRoute />}>

@@ -21,6 +21,8 @@ import {
   Circle,
   AlertCircle,
 } from "lucide-react";
+import logo from "../assets/logo.png";
+import { Users, BarChart3, Shield } from "lucide-react";
 
 // Each step owns its own set of fields so we only validate what's
 // actually on screen before letting someone move forward.
@@ -62,8 +64,12 @@ const Register = () => {
     handleSubmit,
     watch,
     trigger,
+    setValue,
     formState: { errors },
-  } = useForm({ mode: "onBlur", shouldUnregister: false });
+  } = useForm({
+    mode: "onBlur",
+    shouldUnregister: false,
+  });
 
   const password = watch("password", "");
   const currentStepData = STEPS[currentStep - 1];
@@ -131,576 +137,681 @@ const Register = () => {
         error.response?.data?.message ||
         error.response?.data?.error ||
         "Registration failed. Please try again.";
-      if (!error.response || error.response.status !== 422) {
-        toast.error(message);
-      }
+
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const onFormSubmit = (e) => {
+  const onFormSubmit = async (e) => {
     e.preventDefault();
+
     if (currentStep < STEPS.length) {
-      handleNext();
-    } else {
-      handleSubmit(onSubmit)();
+      await handleNext();
+      return;
     }
+
+    handleSubmit(onSubmit)();
   };
 
   return (
     <div className="min-h-screen flex">
       {/* Left Hero Section */}
-      <div className="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-slate-900 via-orange-900/80 to-orange-700 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-gradient-to-br from-slate-900 via-orange-900/80 to-orange-700">
+        {/* Background Effects */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-60 h-60 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-orange-400 rounded-full blur-3xl"></div>
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
+
+          <div
+            className="absolute bottom-20 right-20 w-96 h-96 bg-orange-400 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "1s" }}
+          ></div>
+
+          <div
+            className="absolute top-1/2 left-1/3 w-64 h-64 bg-orange-500 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "0.5s" }}
+          ></div>
         </div>
 
-        <div className="relative z-10 flex flex-col justify-center px-10 xl:px-16 text-white">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-              <Hexagon className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">EquipmentsDekho</h2>
-              <p className="text-xs text-orange-100 font-medium">
-                Partner Portal
-              </p>
+        <div className="relative flex gap-3 flex-col z-10 max-w-lg mx-auto px-10 text-white">
+          {/* Logo */}
+          <div className="mb-8">
+            <div className="inline-flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-3xl px-5 py-4">
+              <img
+                src={logo}
+                alt="EquipmentsDekho"
+                className="h-12 w-auto object-contain"
+              />
+
+              <div className="w-px h-10 bg-white/20"></div>
+
+              <div>
+                <h2 className="text-xl font-bold">EquipmentsDekho</h2>
+                <p className="text-sm text-orange-100">Partner Portal</p>
+              </div>
             </div>
           </div>
 
-          <h1 className="text-3xl xl:text-4xl font-bold leading-tight mb-4">
-            Put your equipment in front
-            <br />
-            <span className="text-orange-100">
-              of buyers who are ready to rent
-            </span>
+          {/* Heading */}
+          <h1 className="text-2xl xl:text-3xl font-bold tracking-tight leading-tight">
+            Partner With EquipmentsDekho
           </h1>
-          <p className="text-orange-100 mb-10 max-w-sm leading-relaxed">
-            List once and start receiving enquiries from verified businesses
-            searching by category, location, and budget.
+
+          <p className="text-sm max-w-md text-orange-100 leading-relaxed mt-3">
+            Create your partner account and showcase your equipment to verified
+            buyers across India.
           </p>
 
-          <div className="space-y-3">
-            {[
-              "Get matched with buyers searching your exact category",
-              "Show off verified badges and customer reviews",
-              "Talk to a dedicated account manager, not a ticket queue",
-              "Track every enquiry and booking from one dashboard",
-            ].map((benefit, idx) => (
-              <div key={idx} className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-300 flex-shrink-0" />
-                <span className="text-sm text-orange-100">{benefit}</span>
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 mt-8 mb-8">
+            <div>
+              <h3 className="text-3xl font-bold">5K+</h3>
+              <p className="text-sm text-orange-100">Listings</p>
+            </div>
+
+            <div>
+              <h3 className="text-3xl font-bold">1200+</h3>
+              <p className="text-sm text-orange-100">Buyers</p>
+            </div>
+
+            <div>
+              <h3 className="text-3xl font-bold">50+</h3>
+              <p className="text-sm text-orange-100">Cities</p>
+            </div>
+          </div>
+
+          {/* Feature Cards */}
+          <div className="space-y-4">
+            <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-white">Verified Leads</h3>
+
+                  <p className="text-xs text-orange-100">
+                    Connect directly with genuine buyers.
+                  </p>
+                </div>
               </div>
-            ))}
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-white" />
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-white">More Visibility</h3>
+
+                  <p className="text-xs text-orange-100">
+                    Showcase your equipment to thousands of customers.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-white">Trusted Platform</h3>
+
+                  <p className="text-xs text-orange-100">
+                    Secure and reliable partner ecosystem.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Right Form Section */}
-      <div className="w-full lg:w-3/5 flex items-center justify-center p-6 sm:p-8 bg-white overflow-y-auto">
-        <div className="w-full max-w-2xl animate-fade-in">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-xl flex items-center justify-center">
-              <Hexagon className="w-6 h-6 text-white" />
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8 bg-slate-50 overflow-y-auto">
+        <div className="w-full max-w-3xl">
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 md:p-10">
+            {/* Mobile Logo */}
+            <div className="lg:hidden flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-xl flex items-center justify-center">
+                <Hexagon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-surface-900">
+                  EquipmentsDekho
+                </h2>
+                <p className="text-[10px] text-surface-400 font-medium">
+                  Partner Portal
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-surface-900">
-                EquipmentsDekho
-              </h2>
-              <p className="text-[10px] text-surface-400 font-medium">
-                Partner Portal
-              </p>
-            </div>
-          </div>
 
-          {/* Step indicator */}
-          <div className="flex items-center mb-8">
-            {STEPS.map((step, idx) => {
-              const isActive = step.id === currentStep;
-              const isComplete = step.id < currentStep;
-              return (
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-slate-500">
+                  Step {currentStep} of {STEPS.length}
+                </span>
+
+                <span className="text-sm font-semibold text-orange-600">
+                  {Math.round((currentStep / STEPS.length) * 100)}%
+                </span>
+              </div>
+
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  key={step.id}
-                  className="flex items-center flex-1 last:flex-none"
-                >
-                  <button
-                    type="button"
-                    onClick={() => goToStep(step.id)}
-                    disabled={step.id > currentStep}
-                    className={`flex items-center gap-2 ${
-                      step.id < currentStep
-                        ? "cursor-pointer"
-                        : "cursor-default"
-                    }`}
-                  >
-                    <span
-                      className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold transition-all duration-200 ${
-                        isComplete
-                          ? "bg-emerald-500 text-white"
-                          : isActive
-                            ? "bg-gradient-to-br from-primary-600 to-secondary-600 text-white"
-                            : "bg-surface-100 text-surface-400"
-                      }`}
-                    >
-                      {isComplete ? (
-                        <CheckCircle2 className="w-4 h-4" />
-                      ) : (
-                        step.id
-                      )}
-                    </span>
-                    <span
-                      className={`hidden sm:block text-sm font-medium ${
-                        isActive
-                          ? "text-surface-900"
-                          : isComplete
-                            ? "text-surface-600"
-                            : "text-surface-400"
-                      }`}
-                    >
-                      {step.label}
-                    </span>
-                  </button>
-                  {idx < STEPS.length - 1 && (
-                    <div
-                      className={`flex-1 h-px mx-3 transition-colors duration-300 ${
-                        step.id < currentStep
-                          ? "bg-emerald-400"
-                          : "bg-surface-200"
-                      }`}
-                    ></div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500"
+                  style={{
+                    width: `${(currentStep / STEPS.length) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
 
-          {/* Step header */}
-          <div className="mb-6">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary-600 mb-1">
-              Step {currentStep} of {STEPS.length}
-            </p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-surface-900 mb-1">
-              {currentStepData.title}
-            </h2>
-            <p className="text-surface-500">{currentStepData.subtitle}</p>
-          </div>
+            {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                GST Verified
+              </div>
 
-          {/* Form */}
-          <form onSubmit={onFormSubmit} className="space-y-5">
-            <div key={currentStep} className="space-y-4 animate-fade-in">
-              {/* Step 1: Business */}
-              {currentStep === 1 && (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                Secure Account
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                Free Listing
+              </div>
+            </div> */}
+
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-slate-900">
+                {currentStepData.title}
+              </h1>
+
+              <p className="mt-2 text-slate-500">{currentStepData.subtitle}</p>
+            </div>
+            {/* Form */}
+            <form onSubmit={onFormSubmit} className="space-y-5">
+              <div key={currentStep} className="space-y-4 animate-fade-in">
+                {/* Step 1: Business */}
+                {currentStep === 1 && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 mb-1.5">
+                          Brand Name
+                        </label>
+                        <div className="relative">
+                          <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                          <input
+                            type="text"
+                            placeholder="Your brand name"
+                            className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
+                              errors.brand_name
+                                ? "border-red-300 focus:ring-red-100"
+                                : ""
+                            }`}
+                            {...register("brand_name", {
+                              required: "Brand name is required",
+                            })}
+                          />
+                        </div>
+                        {errors.brand_name && (
+                          <p className="mt-1 text-xs text-red-500 font-medium">
+                            {errors.brand_name.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 mb-1.5">
+                          Company Name
+                        </label>
+                        <div className="relative">
+                          <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                          <input
+                            type="text"
+                            placeholder="Legal company name"
+                            className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
+                              errors.company_name
+                                ? "border-red-300 focus:ring-red-100"
+                                : ""
+                            }`}
+                            {...register("company_name", {
+                              required: "Company name is required",
+                            })}
+                          />
+                        </div>
+                        {errors.company_name && (
+                          <p className="mt-1 text-xs text-red-500 font-medium">
+                            {errors.company_name.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-surface-700 mb-1.5">
-                        Brand Name
+                        GST Number
                       </label>
                       <div className="relative">
-                        <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                        <FileText className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
                         <input
                           type="text"
-                          placeholder="Your brand name"
+                          placeholder="e.g. 22AAAAA0000A1Z5"
+                          maxLength={15}
                           className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
-                            errors.brand_name
+                            errors.gst
                               ? "border-red-300 focus:ring-red-100"
                               : ""
                           }`}
-                          {...register("brand_name", {
-                            required: "Brand name is required",
-                          })}
-                        />
-                      </div>
-                      {errors.brand_name && (
-                        <p className="mt-1 text-xs text-red-500 font-medium">
-                          {errors.brand_name.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-surface-700 mb-1.5">
-                        Company Name
-                      </label>
-                      <div className="relative">
-                        <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-                        <input
-                          type="text"
-                          placeholder="Legal company name"
-                          className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
-                            errors.company_name
-                              ? "border-red-300 focus:ring-red-100"
-                              : ""
-                          }`}
-                          {...register("company_name", {
-                            required: "Company name is required",
-                          })}
-                        />
-                      </div>
-                      {errors.company_name && (
-                        <p className="mt-1 text-xs text-red-500 font-medium">
-                          {errors.company_name.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-1.5">
-                      GST Number
-                    </label>
-                    <div className="relative">
-                      <FileText className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-                      <input
-                        type="text"
-                        placeholder="e.g. 22AAAAA0000A1Z5"
-                        className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
-                          errors.gst ? "border-red-300 focus:ring-red-100" : ""
-                        }`}
-                        {...register("gst", {
-                          required: "GST number is required",
-                          pattern: {
-                            value:
-                              /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
-                            message: "Enter a valid GST number",
-                          },
-                        })}
-                      />
-                    </div>
-                    {errors.gst ? (
-                      <p className="mt-1 text-xs text-red-500 font-medium">
-                        {errors.gst.message}
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-xs text-surface-400">
-                        15-character GSTIN, exactly as on your registration
-                        certificate
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-1.5">
-                      Office Address
-                    </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-surface-400" />
-                      <textarea
-                        rows="2"
-                        placeholder="Complete office address"
-                        className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 resize-none ${
-                          errors.office_address
-                            ? "border-red-300 focus:ring-red-100"
-                            : ""
-                        }`}
-                        {...register("office_address", {
-                          required: "Office address is required",
-                        })}
-                      ></textarea>
-                    </div>
-                    {errors.office_address && (
-                      <p className="mt-1 text-xs text-red-500 font-medium">
-                        {errors.office_address.message}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* Step 2: Contact */}
-              {currentStep === 2 && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-1.5">
-                      Username
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-                      <input
-                        type="text"
-                        placeholder="Choose a username"
-                        className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
-                          errors.username
-                            ? "border-red-300 focus:ring-red-100"
-                            : ""
-                        }`}
-                        {...register("username", {
-                          required: "Username is required",
-                          minLength: {
-                            value: 3,
-                            message: "Username must be at least 3 characters",
-                          },
-                        })}
-                      />
-                    </div>
-                    {errors.username && (
-                      <p className="mt-1 text-xs text-red-500 font-medium">
-                        {errors.username.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-surface-700 mb-1.5">
-                        Email
-                      </label>
-                      <div className="relative">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-                        <input
-                          type="email"
-                          placeholder="you@company.com"
-                          className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
-                            errors.email
-                              ? "border-red-300 focus:ring-red-100"
-                              : ""
-                          }`}
-                          {...register("email", {
-                            required: "Email is required",
+                          {...register("gst", {
+                            required: "GST number is required",
                             pattern: {
-                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                              message: "Invalid email address",
+                              value:
+                                /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
+                              message: "Enter a valid GST number",
                             },
                           })}
+                          onChange={(e) =>
+                            setValue("gst", e.target.value.toUpperCase())
+                          }
                         />
                       </div>
-                      {errors.email && (
+                      {errors.gst ? (
                         <p className="mt-1 text-xs text-red-500 font-medium">
-                          {errors.email.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-surface-700 mb-1.5">
-                        Phone Number
-                      </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-                        <input
-                          type="tel"
-                          placeholder="Your phone number"
-                          className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
-                            errors.phone_no
-                              ? "border-red-300 focus:ring-red-100"
-                              : ""
-                          }`}
-                          {...register("phone_no", {
-                            required: "Phone number is required",
-                            pattern: {
-                              value: /^[0-9]{10}$/,
-                              message: "Enter a valid 10-digit phone number",
-                            },
-                          })}
-                        />
-                      </div>
-                      {errors.phone_no ? (
-                        <p className="mt-1 text-xs text-red-500 font-medium">
-                          {errors.phone_no.message}
+                          {errors.gst.message}
                         </p>
                       ) : (
                         <p className="mt-1 text-xs text-surface-400">
-                          We'll only call if there's an issue with your account
+                          15-character GSTIN, exactly as on your registration
+                          certificate
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 mb-1.5">
+                        Office Address
+                      </label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-surface-400" />
+                        <textarea
+                          rows="2"
+                          placeholder="Complete office address"
+                          className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 resize-none ${
+                            errors.office_address
+                              ? "border-red-300 focus:ring-red-100"
+                              : ""
+                          }`}
+                          {...register("office_address", {
+                            required: "Office address is required",
+                          })}
+                        ></textarea>
+                      </div>
+                      {errors.office_address && (
+                        <p className="mt-1 text-xs text-red-500 font-medium">
+                          {errors.office_address.message}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Step 2: Contact */}
+                {currentStep === 2 && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 mb-1.5">
+                        Username
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                        <input
+                          type="text"
+                          placeholder="Choose a username"
+                          className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
+                            errors.username
+                              ? "border-red-300 focus:ring-red-100"
+                              : ""
+                          }`}
+                          {...register("username", {
+                            required: "Username is required",
+                            minLength: {
+                              value: 3,
+                              message: "Username must be at least 3 characters",
+                            },
+                            pattern: {
+                              value: /^[a-zA-Z0-9_]+$/,
+                              message:
+                                "Only letters, numbers and underscore (_) allowed",
+                            },
+                          })}
+                        />
+                      </div>
+                      {errors.username && (
+                        <p className="mt-1 text-xs text-red-500 font-medium">
+                          {errors.username.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 mb-1.5">
+                          Email
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                          <input
+                            type="email"
+                            placeholder="you@company.com"
+                            className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
+                              errors.email
+                                ? "border-red-300 focus:ring-red-100"
+                                : ""
+                            }`}
+                            {...register("email", {
+                              required: "Email is required",
+                              pattern: {
+                                value:
+                                  /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                message: "Invalid email address",
+                              },
+                            })}
+                          />
+                        </div>
+                        {errors.email && (
+                          <p className="mt-1 text-xs text-red-500 font-medium">
+                            {errors.email.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 mb-1.5">
+                          Phone Number
+                        </label>
+                        <div className="relative">
+                          <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            maxLength={10}
+                            placeholder="Your phone number"
+                            className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
+                              errors.phone_no
+                                ? "border-red-300 focus:ring-red-100"
+                                : ""
+                            }`}
+                            {...register("phone_no", {
+                              required: "Phone number is required",
+                              pattern: {
+                                value: /^[0-9]{10}$/,
+                                message: "Enter a valid 10-digit phone number",
+                              },
+                            })}
+                            onInput={(e) => {
+                              e.target.value = e.target.value.replace(
+                                /\D/g,
+                                "",
+                              );
+                            }}
+                          />
+                        </div>
+                        {errors.phone_no ? (
+                          <p className="mt-1 text-xs text-red-500 font-medium">
+                            {errors.phone_no.message}
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs text-surface-400">
+                            We'll only call if there's an issue with your
+                            account
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Step 3: Security */}
+                {currentStep === 3 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 mb-1.5">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create password"
+                          className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 pr-10 ${
+                            errors.password
+                              ? "border-red-300 focus:ring-red-100"
+                              : ""
+                          }`}
+                          {...register("password", {
+                            required: "Password is required",
+                            validate: {
+                              minLength: (value) =>
+                                value.length >= 6 ||
+                                "Password must be at least 6 characters",
+
+                              uppercase: (value) =>
+                                /[A-Z]/.test(value) ||
+                                "Password must contain one uppercase letter",
+
+                              number: (value) =>
+                                /[0-9]/.test(value) ||
+                                "Password must contain one number",
+
+                              special: (value) =>
+                                /[^A-Za-z0-9]/.test(value) ||
+                                "Password must contain one special character",
+                            },
+                          })}
+                        />
+                        <button
+                          type="button"
+                          aria-label={
+                            showPassword ? "Hide password" : "Show password"
+                          }
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600 transition-colors"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                      {errors.password && (
+                        <p className="mt-1 text-xs text-red-500 font-medium">
+                          {errors.password.message}
+                        </p>
+                      )}
+
+                      {password && (
+                        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                          {" "}
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-semibold text-slate-700">
+                              Password Strength
+                            </span>
+
+                            <span
+                              className={`text-xs font-bold ${
+                                passwordStrength.score === 1
+                                  ? "text-red-500"
+                                  : passwordStrength.score === 2
+                                    ? "text-amber-500"
+                                    : "text-green-600"
+                              }`}
+                            >
+                              {passwordStrength.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-surface-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`}
+                                style={{
+                                  width: `${(passwordStrength.score / 3) * 100}%`,
+                                }}
+                              ></div>
+                            </div>
+                            <span
+                              className={`text-xs font-medium ${
+                                passwordStrength.score === 1
+                                  ? "text-red-500"
+                                  : passwordStrength.score === 2
+                                    ? "text-amber-500"
+                                    : "text-emerald-500"
+                              }`}
+                            >
+                              {passwordStrength.label}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 gap-1">
+                            {passwordChecks.map((check, i) => (
+                              <div
+                                key={i}
+                                className={`flex items-center gap-1.5 text-xs ${
+                                  check.met
+                                    ? "text-emerald-600"
+                                    : "text-surface-400"
+                                }`}
+                              >
+                                {check.met ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Circle className="w-3.5 h-3.5" />
+                                )}
+                                <span>{check.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 mb-1.5">
+                        Confirm Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm password"
+                          className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 pr-10 ${
+                            errors.confirm_password
+                              ? "border-red-300 focus:ring-red-100"
+                              : ""
+                          }`}
+                          {...register("confirm_password", {
+                            required: "Please confirm your password",
+                            validate: (value) =>
+                              value === password || "Passwords do not match",
+                          })}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          aria-label={
+                            showConfirmPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600 transition-colors"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                      {errors.confirm_password && (
+                        <p className="mt-1 text-xs text-red-500 font-medium">
+                          {errors.confirm_password.message}
                         </p>
                       )}
                     </div>
                   </div>
-                </>
-              )}
+                )}
+              </div>
 
-              {/* Step 3: Security */}
-              {currentStep === 3 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-1.5">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Create password"
-                        className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 pr-10 ${
-                          errors.password
-                            ? "border-red-300 focus:ring-red-100"
-                            : ""
-                        }`}
-                        {...register("password", {
-                          required: "Password is required",
-                          minLength: {
-                            value: 6,
-                            message: "Password must be at least 6 characters",
-                          },
-                        })}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600 transition-colors"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="mt-1 text-xs text-red-500 font-medium">
-                        {errors.password.message}
-                      </p>
-                    )}
-
-                    {password && (
-                      <div className="mt-2 space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-surface-100 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`}
-                              style={{
-                                width: `${(passwordStrength.score / 3) * 100}%`,
-                              }}
-                            ></div>
-                          </div>
-                          <span
-                            className={`text-xs font-medium ${
-                              passwordStrength.score === 1
-                                ? "text-red-500"
-                                : passwordStrength.score === 2
-                                  ? "text-amber-500"
-                                  : "text-emerald-500"
-                            }`}
-                          >
-                            {passwordStrength.label}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 gap-1">
-                          {passwordChecks.map((check, i) => (
-                            <div
-                              key={i}
-                              className={`flex items-center gap-1.5 text-xs ${
-                                check.met
-                                  ? "text-emerald-600"
-                                  : "text-surface-400"
-                              }`}
-                            >
-                              {check.met ? (
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                              ) : (
-                                <Circle className="w-3.5 h-3.5" />
-                              )}
-                              <span>{check.label}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-1.5">
-                      Confirm Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm password"
-                        className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 pr-10 ${
-                          errors.confirm_password
-                            ? "border-red-300 focus:ring-red-100"
-                            : ""
-                        }`}
-                        {...register("confirm_password", {
-                          required: "Please confirm your password",
-                          validate: (value) =>
-                            value === password || "Passwords do not match",
-                        })}
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600 transition-colors"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                    {errors.confirm_password && (
-                      <p className="mt-1 text-xs text-red-500 font-medium">
-                        {errors.confirm_password.message}
-                      </p>
-                    )}
-                  </div>
+              {stepError && (
+                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>
+                    Please fix the highlighted fields before continuing.
+                  </span>
                 </div>
               )}
-            </div>
 
-            {stepError && (
-              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>
-                  Please fix the highlighted fields before continuing.
-                </span>
-              </div>
-            )}
-
-            {/* Navigation */}
-            <div className="flex items-center gap-3 pt-1">
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-surface-600 hover:text-surface-900 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r  from-primary-600 to-secondary-600 text-white font-semibold rounded-xl
-                  hover:opacity-90 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
-                  disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-primary-500/25"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Creating account...</span>
-                  </>
-                ) : currentStep < STEPS.length ? (
-                  <>
-                    <span>Continue</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    <span>Create account</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
+              {/* Navigation */}
+              <div className="flex items-center gap-3 pt-1">
+                {currentStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-surface-600 hover:text-surface-900 transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                  </button>
                 )}
-              </button>
-            </div>
-          </form>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className=" cursor-pointer flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl
+      hover:opacity-90 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+      disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-orange-500/25"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Creating account...</span>
+                    </>
+                  ) : currentStep < STEPS.length ? (
+                    <>
+                      <span>Continue</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  ) : (
+                    <>
+                      <span>Create account</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
 
-          <p className="mt-6 text-center text-sm text-surface-500">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
-            >
-              Sign in
-            </Link>
-          </p>
+            <p className="mt-6 text-center text-sm text-surface-500">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
