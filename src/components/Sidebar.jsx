@@ -63,7 +63,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             </div>
             {!isCollapsed && (
               <div className="overflow-hidden">
-                <p className="text-[13px] font-bold text-zinc-900 leading-tight whitespace-nowrap">EquipmentsDekho</p>
+                <p className="text-[13px] font-bold text-zinc-900 leading-tight whitespace-nowrap">Equipments Dekho</p>
                 <p className="text-[10px] text-zinc-400 font-medium leading-tight">Partner CRM</p>
               </div>
             )}
