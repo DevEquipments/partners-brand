@@ -20,61 +20,62 @@ const Navbar = ({ onMenuToggle }) => {
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-30 h-[72px] bg-white/78 backdrop-blur-[20px] border-b border-surface-200/60">
-      <div className="flex items-center justify-between h-full px-6 md:px-8">
-        {/* Left - Hamburger (below md only) + Search */}
-        <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-30 h-[64px] bg-white/90 backdrop-blur-xl border-b border-zinc-100 shrink-0">
+      <div className="flex items-center justify-between h-full px-5 md:px-6 gap-4">
+
+        {/* Left */}
+        <div className="flex items-center gap-3">
+          {/* Hamburger — mobile only */}
           <button
             onClick={onMenuToggle}
-            className="md:hidden p-2.5 rounded-xl text-surface-500 hover:bg-surface-100 hover:text-surface-700 transition-all duration-200"
+            className="md:hidden p-2 rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Search bar - visible from md (tablet+) */}
-          <div className="hidden md:flex items-center gap-2.5 bg-surface-50 border border-surface-200/60 rounded-xl px-4 py-2.5 w-72 transition-all duration-200 focus-within:border-primary-300 focus-within:bg-white focus-within:shadow-sm">
-            <Search className="w-4 h-4 text-surface-400 flex-shrink-0" />
+          {/* Search */}
+          <div className="hidden md:flex items-center gap-2 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 w-64
+            transition-all duration-200 focus-within:border-orange-400 focus-within:bg-white focus-within:shadow-sm focus-within:shadow-orange-100">
+            <Search className="w-4 h-4 text-zinc-400 shrink-0" />
             <input
               type="text"
-              placeholder="Search..."
-              className="bg-transparent text-sm text-surface-700 placeholder-surface-400 outline-none w-full"
+              placeholder="Search leads, quotes…"
+              className="bg-transparent text-sm text-zinc-700 placeholder-zinc-400 outline-none w-full"
             />
           </div>
         </div>
 
-        {/* Right - Actions */}
-        <div className="flex items-center gap-4">
-          {/* Notifications */}
-          <button className="relative p-2.5 rounded-xl text-surface-400 hover:bg-surface-100 hover:text-surface-700 transition-all duration-200">
+        {/* Right */}
+        <div className="flex items-center gap-1.5">
+          {/* Notification bell */}
+          <button className="relative p-2 rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors">
             <Bell className="w-[18px] h-[18px]" />
-            <span className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-2 ring-white"></span>
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full ring-2 ring-white" />
           </button>
 
-          {/* Divider */}
-          <div className="w-px h-8 bg-surface-200/80"></div>
+          <div className="w-px h-6 bg-zinc-100 mx-1" />
 
-          {/* User Info */}
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end">
-              <span className="text-[13px] font-semibold text-surface-800 leading-tight">{displayName}</span>
-              <span className="text-[11px] text-surface-400 leading-tight mt-0.5">Brand Partner</span>
+          {/* User */}
+          <div className="flex items-center gap-2.5">
+            <div className="hidden md:flex flex-col items-end leading-tight">
+              <span className="text-[13px] font-semibold text-zinc-800">{displayName}</span>
+              <span className="text-[10px] text-zinc-400 font-medium">Brand Partner</span>
             </div>
 
-            {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-accent-600 flex items-center justify-center ring-2 ring-white shadow-md shadow-primary-500/10">
-              <span className="text-xs font-bold text-white">{initials}</span>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center ring-2 ring-white shadow-sm shadow-orange-500/20 shrink-0">
+              <span className="text-[11px] font-bold text-white">{initials}</span>
             </div>
 
-            {/* Logout */}
             <button
               onClick={handleLogout}
-              className="hidden md:flex items-center gap-2 p-2.5 rounded-xl text-surface-400 hover:bg-red-50 hover:text-red-500 transition-all duration-200"
-              title="Logout"
+              title="Log out"
+              className="hidden md:flex p-2 rounded-xl text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
             >
-              <LogOut className="w-[18px] h-[18px]" />
+              <LogOut className="w-[17px] h-[17px]" />
             </button>
           </div>
         </div>
+
       </div>
     </header>
   );

@@ -10,162 +10,215 @@ import {
   FileText,
   Shield,
   Calendar,
-  ExternalLink,
   CheckCircle,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
 
+// ─── tiny copy-to-clipboard helper ──────────────────────────────────────────
+const useCopy = () => {
+  const [copied, setCopied] = useState(null);
+  const copy = (text, key) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 1800);
+    });
+  };
+  return { copied, copy };
+};
+
+// ─── field row inside an info section ───────────────────────────────────────
+const FieldRow = ({ icon: Icon, label, value, copyKey, onCopy, isCopied }) => (
+  <div className="flex items-start gap-4 py-4 border-b border-zinc-100 last:border-0 group">
+    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center shrink-0 mt-0.5">
+      <Icon className="w-3.5 h-3.5 text-orange-500" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-0.5">{label}</p>
+      {value ? (
+        <p className="text-[13px] font-semibold text-zinc-800 break-words leading-relaxed">{value}</p>
+      ) : (
+        <p className="text-[13px] text-zinc-300 italic">Not provided</p>
+      )}
+    </div>
+    {value && copyKey && (
+      <button
+        onClick={() => onCopy(value, copyKey)}
+        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-300 hover:text-zinc-500 transition-all"
+        title="Copy"
+      >
+        {isCopied ? (
+          <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+        ) : (
+          <Copy className="w-3.5 h-3.5" />
+        )}
+      </button>
+    )}
+  </div>
+);
+
+// ─── section card ────────────────────────────────────────────────────────────
+const Section = ({ title, children }) => (
+  <div className="bg-white rounded-2xl border border-zinc-100 overflow-hidden">
+    <div className="px-6 py-4 border-b border-zinc-100">
+      <h3 className="text-[13px] font-bold text-zinc-900">{title}</h3>
+    </div>
+    <div className="px-6">{children}</div>
+  </div>
+);
+
+// ─── stat pill ───────────────────────────────────────────────────────────────
+const StatPill = ({ label, value, accent }) => {
+  const colors = {
+    orange:  'bg-orange-50  text-orange-600  border-orange-100',
+    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    blue:    'bg-blue-50    text-blue-600    border-blue-100',
+  };
+  return (
+    <div className={`flex flex-col items-center justify-center px-6 py-4 rounded-xl border ${colors[accent]}`}>
+      <p className="text-xl font-bold leading-tight">{value}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wide mt-1 opacity-70">{label}</p>
+    </div>
+  );
+};
+
+// ─── Profile page ─────────────────────────────────────────────────────────────
 const Profile = () => {
   const { user, fetchProfile, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(!user);
+  const { copied, copy } = useCopy();
 
   useEffect(() => {
-    if (!user) {
-      fetchProfile().finally(() => setIsLoading(false));
-    }
+    if (!user) fetchProfile().finally(() => setIsLoading(false));
   }, [user, fetchProfile]);
 
-  if (isLoading || loading) {
-    return <Loader fullScreen={false} text="Loading profile..." />;
-  }
+  if (isLoading || loading) return <Loader fullScreen={false} text="Loading profile…" />;
 
   const displayName = user?.brand_name || user?.name || user?.username || 'Partner';
-  const initials = displayName
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const initials    = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-  const profileFields = [
-    { label: 'Brand Name', value: user?.brand_name, icon: Building2 },
-    { label: 'Company Name', value: user?.company_name, icon: Building2 },
-    { label: 'Email', value: user?.email, icon: Mail },
-    { label: 'Phone', value: user?.phone_no || user?.phone, icon: Phone },
-    { label: 'GST Number', value: user?.gst, icon: FileText },
-    { label: 'Office Address', value: user?.office_address, icon: MapPin },
-    { label: 'Username', value: user?.username, icon: User },
-  ];
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' })
+    : 'N/A';
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Page Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-surface-900 tracking-tight">Profile</h1>
-        <p className="text-[13px] text-surface-500">View and manage your brand partner profile</p>
+    <div className="space-y-5 animate-fade-in">
+
+      {/* Page title */}
+      <div>
+        <h1 className="text-xl font-bold text-zinc-900">My Profile</h1>
+        <p className="text-xs text-zinc-400 mt-0.5">Your brand partner details and account information</p>
       </div>
 
-      {/* Profile Card */}
-      <div className="bg-white rounded-2xl border border-surface-200/60 overflow-hidden">
-        {/* Cover / Header */}
-        <div className="relative h-44 sm:h-52 bg-gradient-to-br from-surface-900 via-primary-900 to-secondary-700 overflow-hidden">
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-80 h-80 bg-white/5 rounded-full blur-2xl"></div>
-            <div className="absolute bottom-0 left-0 w-60 h-60 bg-orange-400/10 rounded-full blur-3xl translate-y-1/3"></div>
-          </div>
-          {/* Grid pattern */}
-          <div
-            className="absolute inset-0 opacity-[0.03]"
+      {/* ── Hero card ── */}
+      <div className="bg-white rounded-2xl border border-zinc-100 overflow-hidden">
+        {/* Cover strip */}
+        <div className="h-28 sm:h-36 bg-gradient-to-br from-zinc-900 via-orange-950 to-orange-700 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-48 h-48 bg-orange-400/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/4 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
+          {/* subtle dot grid */}
+          <div className="absolute inset-0 opacity-[0.06]"
             style={{
-              backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-              backgroundSize: '32px 32px',
+              backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
             }}
-          ></div>
+          />
         </div>
 
-        {/* Avatar & Name */}
-        <div className="relative px-6 sm:px-8 pb-8">
+        {/* Avatar row */}
+        <div className="relative px-6 sm:px-8 pb-6">
           {/* Avatar */}
-          <div className="absolute -top-14 left-6 sm:left-8">
-            <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-primary-600 to-accent-600 flex items-center justify-center ring-4 ring-white shadow-xl shadow-primary-500/10">
-              <span className="text-3xl font-bold text-white">{initials}</span>
+          <div className="absolute -top-10 left-6 sm:left-8">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600
+              flex items-center justify-center ring-4 ring-white shadow-xl shadow-orange-500/20">
+              <span className="text-2xl sm:text-3xl font-bold text-white">{initials}</span>
             </div>
           </div>
 
-          {/* Name & Status */}
-          <div className="pt-[72px] flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl sm:text-2xl font-bold text-surface-900 tracking-tight">{displayName}</h2>
-                <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 px-2.5 py-1 rounded-lg">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-bold">Verified</span>
-                </div>
+          {/* Name + badges */}
+          <div className="pt-12 sm:pt-16 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h2 className="text-xl font-bold text-zinc-900">{displayName}</h2>
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                  <CheckCircle className="w-3 h-3" /> Verified
+                </span>
               </div>
-              <p className="text-[13px] text-surface-500">
-                {user?.company_name || 'Brand Partner'} | Premium Partner
+              <p className="text-xs text-zinc-400">
+                {user?.company_name || 'Brand Partner'} · @{user?.username}
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 text-[11px] text-surface-500 bg-surface-50 border border-surface-100 px-3.5 py-2 rounded-xl font-medium">
-              <Shield className="w-3.5 h-3.5 text-surface-400" />
-              <span>Premium Account</span>
+            {/* Quick stats */}
+            <div className="flex gap-2 shrink-0">
+              <StatPill label="Leads"    value="1,284" accent="orange" />
+              <StatPill label="Rating"   value="4.8★"  accent="amber" />
+              <StatPill label="Joined"   value={memberSince} accent="blue" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Profile Details Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {profileFields.map((field, index) => (
-          <div
-            key={field.label}
-            className="bg-white rounded-2xl border border-surface-200/60 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 hover:border-surface-300 animate-fade-in"
-            style={{ animationDelay: `${index * 75}ms` }}
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-11 h-11 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                <field.icon className="w-5 h-5 text-primary-600" />
-              </div>
-              <div className="min-w-0 flex-1 space-y-1">
-                <p className="text-[11px] font-semibold text-surface-400 uppercase tracking-widest">
-                  {field.label}
-                </p>
-                <p className="text-sm font-semibold text-surface-800 break-words leading-relaxed">
-                  {field.value || (
-                    <span className="text-surface-300 font-normal italic">Not provided</span>
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* ── Two-column detail grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        {/* Business info */}
+        <Section title="Business Details">
+          <FieldRow icon={Building2} label="Brand Name"    value={user?.brand_name}    copyKey="brand"   onCopy={copy} isCopied={copied === 'brand'} />
+          <FieldRow icon={Building2} label="Company Name"  value={user?.company_name}  copyKey="company" onCopy={copy} isCopied={copied === 'company'} />
+          <FieldRow icon={FileText}  label="GST Number"    value={user?.gst}           copyKey="gst"     onCopy={copy} isCopied={copied === 'gst'} />
+          <FieldRow icon={MapPin}    label="Office Address" value={user?.office_address} />
+        </Section>
+
+        {/* Contact info */}
+        <Section title="Contact Details">
+          <FieldRow icon={User}  label="Username"     value={user?.username}              copyKey="uname"  onCopy={copy} isCopied={copied === 'uname'} />
+          <FieldRow icon={Mail}  label="Email"        value={user?.email}                 copyKey="email"  onCopy={copy} isCopied={copied === 'email'} />
+          <FieldRow icon={Phone} label="Phone Number" value={user?.phone_no || user?.phone} copyKey="phone" onCopy={copy} isCopied={copied === 'phone'} />
+        </Section>
+
       </div>
 
-      {/* Account Info Card */}
-      <div className="bg-white rounded-2xl border border-surface-200/60 p-6 sm:p-8">
-        <h3 className="text-base font-bold text-surface-900 tracking-tight mb-5">Account Information</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-surface-50 border border-surface-100 rounded-xl p-5">
-            <div className="flex items-center gap-2 text-surface-400 mb-2.5">
-              <Calendar className="w-4 h-4" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest">Member Since</span>
+      {/* ── Account info strip ── */}
+      <div className="bg-white rounded-2xl border border-zinc-100 px-6 py-5">
+        <h3 className="text-[13px] font-bold text-zinc-900 mb-4">Account Information</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3">
+            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
+              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
             </div>
-            <p className="text-sm font-bold text-surface-800">
-              {user?.created_at
-                ? new Date(user.created_at).toLocaleDateString('en-IN', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })
-                : 'N/A'}
-            </p>
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Member Since</p>
+              <p className="text-[13px] font-semibold text-zinc-800 mt-0.5">
+                {user?.created_at
+                  ? new Date(user.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
+                  : 'N/A'}
+              </p>
+            </div>
           </div>
-          <div className="bg-surface-50 border border-surface-100 rounded-xl p-5">
-            <div className="flex items-center gap-2 text-surface-400 mb-2.5">
-              <Shield className="w-4 h-4" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest">Account Type</span>
+
+          <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3">
+            <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
+              <Shield className="w-3.5 h-3.5 text-orange-500" />
             </div>
-            <p className="text-sm font-bold text-surface-800">Premium Brand Partner</p>
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Account Type</p>
+              <p className="text-[13px] font-semibold text-zinc-800 mt-0.5">Premium Brand Partner</p>
+            </div>
           </div>
-          <div className="bg-surface-50 border border-surface-100 rounded-xl p-5">
-            <div className="flex items-center gap-2 text-surface-400 mb-2.5">
-              <ExternalLink className="w-4 h-4" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest">Portal Access</span>
+
+          <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+              <ExternalLink className="w-3.5 h-3.5 text-emerald-500" />
             </div>
-            <p className="text-sm font-bold text-emerald-600">Active</p>
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Portal Access</p>
+              <p className="text-[13px] font-semibold text-emerald-600 mt-0.5">Active</p>
+            </div>
           </div>
         </div>
       </div>
+
     </div>
   );
 };

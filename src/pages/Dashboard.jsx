@@ -2,319 +2,316 @@ import { useAuth } from "../context/AuthContext";
 import {
   Users,
   MessageSquare,
-  UserCheck,
-  ShieldCheck,
   TrendingUp,
   ArrowUpRight,
-  ArrowRight,
   Clock,
   FileText,
   Phone,
   Mail,
   Star,
-  Activity,
   Zap,
   ChevronRight,
+  CheckCircle2,
+  Circle,
+  AlertCircle,
+  BarChart2,
+  Inbox,
 } from "lucide-react";
 
-// Reusable Card Component
-const Card = ({ children, className = "" }) => (
-  <div
-    className={`bg-white rounded-2xl border border-zinc-200 ${className}`}
-  >
-    {children}
+// ─── tiny primitives ────────────────────────────────────────────────────────
+
+const Badge = ({ children, variant = "neutral" }) => {
+  const styles = {
+    neutral: "bg-zinc-100 text-zinc-600",
+    green:   "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    orange:  "bg-orange-50  text-orange-700  border border-orange-200",
+    blue:    "bg-blue-50    text-blue-700    border border-blue-200",
+    amber:   "bg-amber-50   text-amber-700   border border-amber-200",
+  };
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold ${styles[variant]}`}>
+      {children}
+    </span>
+  );
+};
+
+const SectionHeader = ({ title, subtitle, action }) => (
+  <div className="flex items-start justify-between px-6 py-4 border-b border-zinc-100">
+    <div>
+      <h2 className="text-[15px] font-bold text-zinc-900">{title}</h2>
+      {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
+    </div>
+    {action && (
+      <button className="flex items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-700 px-2.5 py-1.5 rounded-lg hover:bg-orange-50 transition-colors">
+        {action}
+        <ArrowUpRight className="w-3.5 h-3.5" />
+      </button>
+    )}
   </div>
 );
 
-// Statistics Card Component
-const StatCard = ({ card, index }) => (
-  <Card className="p-6 hover:shadow-lg hover:border-zinc-300 transition-all duration-300 animate-fade-in group"
-    style={{ animationDelay: `${index * 100}ms` }}>
-    <div className="flex items-start justify-between mb-5">
-      <div className={`w-12 h-12 ${card.iconBg} rounded-xl flex items-center justify-center`}>
-        <card.icon className={`w-5 h-5 ${card.iconColor}`} />
-      </div>
-      {card.trend === "up" && (
-        <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-          <TrendingUp className="w-3 h-3" />
-          <span className="text-xs font-bold">{card.change}</span>
+// ─── KPI card ───────────────────────────────────────────────────────────────
+
+const KpiCard = ({ icon: Icon, label, value, delta, deltaLabel, accent }) => {
+  const accents = {
+    orange: { bg: "bg-orange-50", text: "text-orange-600", bar: "bg-orange-500", ring: "ring-orange-100" },
+    emerald:{ bg: "bg-emerald-50", text: "text-emerald-600", bar: "bg-emerald-500", ring: "ring-emerald-100" },
+    blue:   { bg: "bg-blue-50",    text: "text-blue-600",    bar: "bg-blue-500",    ring: "ring-blue-100" },
+    amber:  { bg: "bg-amber-50",   text: "text-amber-600",   bar: "bg-amber-500",   ring: "ring-amber-100" },
+  };
+  const a = accents[accent] || accents.orange;
+  return (
+    <div className="bg-white rounded-2xl border border-zinc-100 p-5 hover:shadow-md hover:border-zinc-200 transition-all duration-200 group relative overflow-hidden">
+      {/* subtle corner accent */}
+      <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full ${a.bg} opacity-60 group-hover:opacity-100 transition-opacity`} />
+      <div className="relative">
+        <div className={`w-10 h-10 ${a.bg} rounded-xl flex items-center justify-center mb-4`}>
+          <Icon className={`w-5 h-5 ${a.text}`} />
         </div>
-      )}
-      {card.trend === "status" && (
-        <div className="flex items-center gap-1 text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-lg">
-          <span className="text-xs font-bold">{card.change}</span>
-        </div>
-      )}
-    </div>
-    <div className="space-y-2">
-      <p className="text-sm font-medium text-zinc-500">{card.label}</p>
-      <p className="text-2xl font-bold text-zinc-900 leading-none">{card.value}</p>
-    </div>
-    <div
-      className={`absolute inset-x-0 top-0 h-0.5 ${card.accentColor} rounded-b-full opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-      style={{ position: "absolute" }}
-    />
-  </Card>
-);
-
-// Activity Item Component
-const ActivityItem = ({ activity, isLast, index }) => (
-  <div className="flex gap-4 px-6 py-4 hover:bg-zinc-50 transition-colors duration-200 group">
-    <div className="relative flex-shrink-0">
-      <div className={`w-10 h-10 ${activity.iconBg} rounded-lg flex items-center justify-center`}>
-        <activity.icon className={`w-4 h-4 ${activity.iconColor}`} />
+        <p className="text-xs font-medium text-zinc-400 mb-1">{label}</p>
+        <p className="text-2xl font-bold text-zinc-900 leading-none mb-3">{value}</p>
+        {delta !== undefined && (
+          <div className={`flex items-center gap-1.5 text-xs font-semibold ${a.text}`}>
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>{delta} {deltaLabel}</span>
+          </div>
+        )}
       </div>
-      {!isLast && (
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-6 bg-zinc-200" />
-      )}
     </div>
-    <div className="flex-1 min-w-0 pt-0.5">
-      <p className="text-sm font-semibold text-zinc-900 mb-1">{activity.title}</p>
-      <p className="text-xs text-zinc-500">{activity.description}</p>
+  );
+};
+
+// ─── Pipeline funnel ────────────────────────────────────────────────────────
+
+const PIPELINE = [
+  { stage: "New",       count: 84,  color: "bg-blue-500",    track: "bg-blue-100",    pct: 100 },
+  { stage: "Contacted", count: 61,  color: "bg-orange-400",  track: "bg-orange-100",  pct: 73 },
+  { stage: "Quoted",    count: 38,  color: "bg-amber-500",   track: "bg-amber-100",   pct: 45 },
+  { stage: "Won",       count: 22,  color: "bg-emerald-500", track: "bg-emerald-100", pct: 26 },
+];
+
+const PipelineRow = ({ stage, count, color, track, pct }) => (
+  <div className="flex items-center gap-4 py-3">
+    <div className="w-20 shrink-0">
+      <span className="text-xs font-semibold text-zinc-500">{stage}</span>
     </div>
-    <div className="flex items-center gap-1.5 text-xs text-zinc-400 flex-shrink-0 whitespace-nowrap">
-      <Clock className="w-3 h-3" />
-      <span className="font-medium">{activity.time}</span>
+    <div className={`flex-1 h-2 ${track} rounded-full overflow-hidden`}>
+      <div className={`h-full ${color} rounded-full transition-all duration-700`} style={{ width: `${pct}%` }} />
     </div>
+    <span className="w-8 text-right text-sm font-bold text-zinc-800 shrink-0">{count}</span>
   </div>
 );
 
-// Metric Bar Component
-const MetricBar = ({ metric }) => (
-  <div className="space-y-2">
-    <div className="flex items-center justify-between">
-      <span className="text-sm font-medium text-zinc-700">{metric.label}</span>
-      <span className="text-sm font-bold text-zinc-900">{metric.value}%</span>
-    </div>
-    <div className={`h-2 ${metric.trackColor} rounded-full overflow-hidden`}>
-      <div
-        className={`h-full ${metric.color} rounded-full transition-all duration-1000 ease-out`}
-        style={{ width: `${metric.value}%` }}
-      />
-    </div>
-  </div>
-);
+// ─── Activity feed ──────────────────────────────────────────────────────────
 
-// Quick Action Button Component
-const ActionButton = ({ action }) => (
-  <button className={`w-full flex items-center gap-3 p-4 rounded-xl border border-zinc-200 text-left transition-all duration-300 group hover:border-orange-300 hover:bg-orange-50/50`}>
-    <div className={`w-10 h-10 ${action.iconBg} rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110`}>
-      <action.icon className={`w-4 h-4 ${action.iconColor}`} />
+const ACTIVITIES = [
+  {
+    icon: Phone,
+    title: "New lead — Delhi NCR",
+    desc: "Inquiry about tower crane rental (6 months)",
+    time: "2h ago",
+    status: "new",
+    bg: "bg-orange-50", fg: "text-orange-600",
+  },
+  {
+    icon: Mail,
+    title: "Quote sent to Sharma Constructions",
+    desc: "Quotation #QT-2847 · ₹4.2 L/month",
+    time: "4h ago",
+    status: "sent",
+    bg: "bg-blue-50", fg: "text-blue-600",
+  },
+  {
+    icon: Star,
+    title: "5-star review received",
+    desc: "\"Delivered on time, excellent service\" — Gupta Infra",
+    time: "6h ago",
+    status: "review",
+    bg: "bg-amber-50", fg: "text-amber-600",
+  },
+  {
+    icon: CheckCircle2,
+    title: "Lead won — Ravi Builders",
+    desc: "Excavator ×2, 3-month contract",
+    time: "Yesterday",
+    status: "won",
+    bg: "bg-emerald-50", fg: "text-emerald-600",
+  },
+  {
+    icon: AlertCircle,
+    title: "Follow-up overdue",
+    desc: "Mehta Enterprises — no response in 3 days",
+    time: "3d ago",
+    status: "overdue",
+    bg: "bg-red-50", fg: "text-red-500",
+  },
+];
+
+const statusBadge = (s) => {
+  const map = {
+    new:     <Badge variant="orange">New</Badge>,
+    sent:    <Badge variant="blue">Sent</Badge>,
+    review:  <Badge variant="amber">Review</Badge>,
+    won:     <Badge variant="green">Won</Badge>,
+    overdue: <Badge variant="neutral">Overdue</Badge>,
+  };
+  return map[s] || null;
+};
+
+const ActivityRow = ({ item, isLast }) => (
+  <div className="flex gap-3.5 px-6 py-3.5 hover:bg-zinc-50 transition-colors group">
+    <div className="relative shrink-0 mt-0.5">
+      <div className={`w-8 h-8 rounded-lg ${item.bg} flex items-center justify-center`}>
+        <item.icon className={`w-3.5 h-3.5 ${item.fg}`} />
+      </div>
+      {!isLast && <div className="absolute top-8 left-1/2 -translate-x-1/2 w-px h-full bg-zinc-100" />}
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-sm font-semibold text-zinc-900 leading-tight">{action.label}</p>
-      <p className="text-xs text-zinc-500 mt-0.5">{action.description}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[13px] font-semibold text-zinc-800 leading-snug">{item.title}</p>
+        {statusBadge(item.status)}
+      </div>
+      <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{item.desc}</p>
     </div>
-    <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-orange-500 transition-colors flex-shrink-0" />
-  </button>
+    <div className="flex items-center gap-1 text-[11px] text-zinc-300 shrink-0 whitespace-nowrap mt-0.5">
+      <Clock className="w-3 h-3" />
+      {item.time}
+    </div>
+  </div>
 );
+
+// ─── Quick actions ───────────────────────────────────────────────────────────
+
+const ACTIONS = [
+  { icon: FileText, label: "New Quotation",   desc: "Create & send a quote",    bg: "bg-orange-50", fg: "text-orange-600" },
+  { icon: Inbox,    label: "All Leads",        desc: "Browse & filter leads",    bg: "bg-blue-50",   fg: "text-blue-600" },
+  { icon: Mail,     label: "Contact Support",  desc: "Talk to your account manager", bg: "bg-emerald-50", fg: "text-emerald-600" },
+];
+
+// ─── Metric bar ─────────────────────────────────────────────────────────────
+
+const METRICS = [
+  { label: "Response Rate",        value: 92, color: "bg-emerald-500", track: "bg-emerald-100" },
+  { label: "Lead Conversion",      value: 67, color: "bg-orange-500",  track: "bg-orange-100" },
+  { label: "Customer Satisfaction",value: 95, color: "bg-blue-500",    track: "bg-blue-100" },
+  { label: "Profile Completion",   value: 85, color: "bg-amber-500",   track: "bg-amber-100" },
+];
+
+// ─── Dashboard page ──────────────────────────────────────────────────────────
 
 const Dashboard = () => {
   const { user } = useAuth();
   const displayName = user?.brand_name || user?.name || user?.username || "Partner";
 
-  const statsCards = [
-    {
-      label: "Total Leads",
-      value: "1,284",
-      change: "+12.5%",
-      trend: "up",
-      icon: Users,
-      iconBg: "bg-orange-50",
-      iconColor: "text-orange-600",
-      accentColor: "bg-orange-600",
-    },
-    {
-      label: "Active Inquiries",
-      value: "342",
-      change: "+8.2%",
-      trend: "up",
-      icon: MessageSquare,
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-600",
-      accentColor: "bg-emerald-600",
-    },
-    {
-      label: "Profile Status",
-      value: "Active",
-      change: "Verified",
-      trend: "status",
-      icon: UserCheck,
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-600",
-      accentColor: "bg-blue-600",
-    },
-    {
-      label: "Account Status",
-      value: "Premium",
-      change: "Active",
-      trend: "status",
-      icon: ShieldCheck,
-      iconBg: "bg-amber-50",
-      iconColor: "text-amber-600",
-      accentColor: "bg-amber-600",
-    },
-  ];
-
-  const recentActivities = [
-    {
-      icon: Phone,
-      title: "New lead received from Delhi NCR",
-      description: "A customer inquired about construction equipment",
-      time: "2h ago",
-      iconBg: "bg-orange-50",
-      iconColor: "text-orange-600",
-    },
-    {
-      icon: Mail,
-      title: "Inquiry response sent",
-      description: "You responded to the equipment pricing inquiry",
-      time: "4h ago",
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-600",
-    },
-    {
-      icon: Star,
-      title: "Profile rating updated",
-      description: "Your brand received a new 5-star review",
-      time: "6h ago",
-      iconBg: "bg-amber-50",
-      iconColor: "text-amber-600",
-    },
-    {
-      icon: FileText,
-      title: "Quotation generated",
-      description: "Quotation #QT-2847 sent to Sharma Constructions",
-      time: "1d ago",
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-600",
-    },
-  ];
-
-  const performanceMetrics = [
-    { label: "Response Rate", value: 92, color: "bg-emerald-500", trackColor: "bg-emerald-100" },
-    { label: "Lead Conversion", value: 67, color: "bg-orange-500", trackColor: "bg-orange-100" },
-    { label: "Customer Satisfaction", value: 95, color: "bg-blue-500", trackColor: "bg-blue-100" },
-    { label: "Profile Completion", value: 85, color: "bg-amber-500", trackColor: "bg-amber-100" },
-  ];
-
-  const quickActions = [
-    {
-      icon: FileText,
-      label: "Generate Quotation",
-      description: "Create a new price quote",
-      iconBg: "bg-orange-50",
-      iconColor: "text-orange-600",
-    },
-    {
-      icon: Users,
-      label: "View All Leads",
-      description: "Browse lead directory",
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-600",
-    },
-    {
-      icon: Mail,
-      label: "Contact Support",
-      description: "Get help from our team",
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-600",
-    },
-  ];
-
   return (
-    <div className="space-y-8">
-      {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 via-orange-900 to-orange-700 p-8 lg:p-12 text-white animate-fade-in">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-16 left-1/4 w-72 h-72 bg-orange-400/10 rounded-full blur-3xl" />
-        </div>
+    <div className="space-y-6">
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="space-y-4 flex-1">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-xs font-semibold text-white/80 uppercase tracking-wider">Live Dashboard</span>
+      {/* ── Welcome banner ── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-orange-950 to-orange-700 px-8 py-7 text-white">
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-orange-400/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-3 py-1 mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">Live CRM</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold leading-tight tracking-tight">
-              Welcome back, {displayName}
+            <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
+              Good morning, {displayName} 
             </h1>
-            <p className="text-orange-100/90 text-base max-w-md leading-relaxed">
-              Here is an overview of your brand's performance and recent activities. Stay on top of your leads and inquiries.
+            <p className="text-orange-100/70 text-sm mt-1.5 max-w-md">
+              You have <span className="text-white font-semibold">5 open leads</span> and <span className="text-white font-semibold">2 follow-ups</span> due today.
             </p>
           </div>
-
-          <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all duration-300 group self-start lg:self-center whitespace-nowrap">
-            <Zap className="w-4 h-4" />
-            <span>View Analytics</span>
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <button className="flex items-center gap-2 bg-white text-orange-700 font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-orange-50 transition-colors shadow-md">
+              <Zap className="w-4 h-4" />
+              Quick Actions
+            </button>
+            <button className="flex items-center gap-2 bg-white/10 border border-white/15 text-white font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-white/20 transition-colors">
+              <BarChart2 className="w-4 h-4" />
+              Analytics
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsCards.map((card, index) => (
-          <StatCard key={card.label} card={card} index={index} />
-        ))}
+      {/* ── KPI row ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard icon={Users}        label="Total Leads"       value="1,284" delta="+12.5%" deltaLabel="vs last month" accent="orange" />
+        <KpiCard icon={MessageSquare}label="Active Inquiries"  value="342"   delta="+8.2%"  deltaLabel="vs last month" accent="blue" />
+        <KpiCard icon={TrendingUp}   label="Conversion Rate"  value="26.4%" delta="+3.1%"  deltaLabel="vs last month" accent="emerald" />
+        <KpiCard icon={Star}         label="Avg. Rating"      value="4.8★"  delta="+0.2"  deltaLabel="since last week" accent="amber" />
       </div>
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2 overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-200">
-            <div className="space-y-1">
-              <h2 className="text-lg font-bold text-zinc-900">Recent Activity</h2>
-              <p className="text-sm text-zinc-500">Your latest updates and notifications</p>
-            </div>
-            <button className="flex items-center gap-1.5 text-sm font-semibold text-orange-600 hover:text-orange-700 px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors">
-              View all
-              <ArrowUpRight className="w-4 h-4" />
-            </button>
-          </div>
+      {/* ── Main grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-          <div className="divide-y divide-zinc-200">
-            {recentActivities.map((activity, index) => (
-              <ActivityItem
-                key={index}
-                activity={activity}
-                isLast={index === recentActivities.length - 1}
-                index={index}
-              />
+        {/* Activity feed */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-100 overflow-hidden">
+          <SectionHeader title="Activity Feed" subtitle="Real-time updates across your leads" action="View all" />
+          <div className="divide-y divide-zinc-50">
+            {ACTIVITIES.map((a, i) => (
+              <ActivityRow key={i} item={a} isLast={i === ACTIVITIES.length - 1} />
             ))}
           </div>
-        </Card>
+        </div>
 
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Performance Section */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-zinc-900">Performance</h3>
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 bg-zinc-100 px-3 py-1.5 rounded-md">
-                <Activity className="w-3 h-3" />
-                <span>This Month</span>
+        {/* Right column */}
+        <div className="space-y-5">
+
+          {/* Lead pipeline */}
+          <div className="bg-white rounded-2xl border border-zinc-100 overflow-hidden">
+            <SectionHeader title="Lead Pipeline" subtitle="This month's funnel" />
+            <div className="px-6 py-4">
+              {PIPELINE.map((p) => <PipelineRow key={p.stage} {...p} />)}
+              <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center justify-between">
+                <span className="text-xs text-zinc-400">Total leads in pipeline</span>
+                <span className="text-sm font-bold text-zinc-900">205</span>
               </div>
             </div>
+          </div>
 
-            <div className="space-y-6">
-              {performanceMetrics.map((metric) => (
-                <MetricBar key={metric.label} metric={metric} />
+          {/* Performance */}
+          <div className="bg-white rounded-2xl border border-zinc-100 overflow-hidden">
+            <SectionHeader title="Performance" subtitle="Current month" />
+            <div className="px-6 py-4 space-y-4">
+              {METRICS.map((m) => (
+                <div key={m.label}>
+                  <div className="flex justify-between mb-1.5">
+                    <span className="text-xs font-medium text-zinc-600">{m.label}</span>
+                    <span className="text-xs font-bold text-zinc-900">{m.value}%</span>
+                  </div>
+                  <div className={`h-1.5 ${m.track} rounded-full overflow-hidden`}>
+                    <div className={`h-full ${m.color} rounded-full`} style={{ width: `${m.value}%` }} />
+                  </div>
+                </div>
               ))}
             </div>
-          </Card>
+          </div>
 
-          {/* Quick Actions */}
-          <Card className="p-6">
-            <h3 className="text-lg font-bold text-zinc-900 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              {quickActions.map((action) => (
-                <ActionButton key={action.label} action={action} />
+          {/* Quick actions */}
+          <div className="bg-white rounded-2xl border border-zinc-100 overflow-hidden">
+            <SectionHeader title="Quick Actions" />
+            <div className="px-4 py-3 space-y-1.5">
+              {ACTIONS.map((a) => (
+                <button
+                  key={a.label}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-50 transition-colors group text-left"
+                >
+                  <div className={`w-8 h-8 ${a.bg} rounded-lg flex items-center justify-center shrink-0`}>
+                    <a.icon className={`w-3.5 h-3.5 ${a.fg}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-zinc-800 leading-tight">{a.label}</p>
+                    <p className="text-[11px] text-zinc-400">{a.desc}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-orange-500 transition-colors" />
+                </button>
               ))}
             </div>
-          </Card>
+          </div>
+
         </div>
       </div>
     </div>
