@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { registerUser } from "../api/authApi";
 import toast from "react-hot-toast";
 import {
@@ -58,6 +59,8 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const { login } = useAuth();
 
   const {
     register,
@@ -129,9 +132,22 @@ const Register = () => {
         email: data.email,
       };
 
-      await registerUser(payload);
-      toast.success("Registration successful! Please login to continue.");
-      navigate("/login");
+      const response = await registerUser(payload);
+
+      // API Response
+      const token = response.token;
+      const user = response.data;
+
+      // Context login
+      login(token, user);
+
+      toast.success(response.message || "Registration successful!");
+
+      navigate("/dashboard");
+
+      // await registerUser(payload);
+      // toast.success("Registration successful! Please login to continue.");
+      // navigate("/login");
     } catch (error) {
       const message =
         error.response?.data?.message ||

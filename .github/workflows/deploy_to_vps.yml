@@ -1,0 +1,42 @@
+name: Deploy to Partners Brand VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: equipmentsdekho-server
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }} # should be a secret, not env
+
+      - name: Add server to known hosts
+        run: ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy code via rsync
+        run: |
+          rsync -avz \
+          --delete \
+          --exclude '.git' \
+          --exclude '.github' \
+          --filter='P .env' \
+          ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/partners_admin_frontend/partners-brand
+      - name: Deploy to VPS
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            set -e
+            cd /var/www/partners_admin_frontend/partners-brand
+            npm install
+            npm run build
+            pm2 reload partners-brand
+            echo "Deployment Completed Successfully"
+          EOF
