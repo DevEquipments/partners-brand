@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { loginUser } from "../api/authApi";
+import { loginUser } from "../services/authApi";
 import toast from "react-hot-toast";
 import {
   Mail,
@@ -37,7 +37,12 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      const response = await loginUser(data.email, data.password);
+      const response = await loginUser({
+        email: data.email,
+        password: data.password,
+      });
+
+      console.log("respose", response);
       const token =
         response.token || response.data?.token || response.access_token;
 

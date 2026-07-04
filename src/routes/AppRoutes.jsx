@@ -8,6 +8,9 @@ import Register from "../pages/Register";
 import ForgotPassword from "../pages/ForgotPassword";
 import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
+import Quotations from "../pages/Quotations";
+import Inquiries from "../pages/Inquiries";
+import Leads from "../pages/Leads";
 
 const AppRoutes = () => {
   return (
@@ -24,6 +27,9 @@ const AppRoutes = () => {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/quotations" element={<Quotations />} />
+          <Route path="/inquiries" element={<Inquiries />} />
+          <Route path="/leads" element={<Leads />} />
         </Route>
       </Route>
 
