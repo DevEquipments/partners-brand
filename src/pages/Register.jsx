@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { registerUser } from "../api/authApi";
+import { registerUser } from "../services/authApi";
 import toast from "react-hot-toast";
 import {
   User,
