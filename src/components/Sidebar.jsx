@@ -7,9 +7,9 @@ import {
 
 const NAV = [
   { label: 'Dashboard', path: '/dashboard',  icon: LayoutDashboard },
-  { label: 'Leads',     path: '/leads',       icon: Users },
-  { label: 'Inquiries', path: '/inquiries',   icon: MessageSquare },
-  { label: 'Quotations',path: '/quotations',  icon: FileText },
+  // { label: 'Leads',     path: '/leads',       icon: Users },
+  { label: 'Customer Inquiries', path: '/inquiries', icon: MessageSquare },
+  { label: 'Product Quotations', path: '/product-quotes', icon: FileText },
   { label: 'Profile',   path: '/profile',     icon: User },
   { label: 'Settings',  path: '/settings',    icon: Settings },
 ];

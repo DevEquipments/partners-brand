@@ -19,7 +19,7 @@ const API_ENDPOINTS = {
     method: "post",
   },
 
-  getPremiumBrandQuotes: {
+  getPremiumBrandInquiries: {
     url: "/premium-brand-quotes",
     method: "post",
   },
