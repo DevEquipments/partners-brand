@@ -33,13 +33,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
       <aside className={`
         fixed top-0 left-0 z-50 h-screen bg-zinc-900 border-r border-zinc-800
         flex flex-col transition-all duration-300 ease-in-out select-none
-        ${isCollapsed ? 'w-[64px]' : 'w-[224px]'}
+        ${isCollapsed ? 'w-16' : 'w-56'}
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
         md:translate-x-0 md:static md:z-auto
       `}>
 
         {/* Logo */}
-        <div className={`flex items-center h-[60px] border-b border-zinc-800 shrink-0
+        <div className={`flex items-center h-15 border-b border-zinc-800 shrink-0
           ${isCollapsed ? 'justify-center px-3' : 'px-4 gap-3'}`}>
           <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shrink-0 shadow-sm">
             <Hexagon className="w-4 h-4 text-white" />

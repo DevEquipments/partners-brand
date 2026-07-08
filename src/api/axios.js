@@ -46,6 +46,8 @@ API.interceptors.response.use(
       data?.error ||
       "Something went wrong.";
 
+    console.log("API Error:", status, message, data);
+
     switch (status) {
       case 400:
         toast.error(message);
@@ -67,8 +69,9 @@ API.interceptors.response.use(
         break;
 
       case 404:
-        toast.error("API not found.");
+        toast.error(message || "Resource not found.");
         break;
+      // toast.error("Something Went Wrong");
 
       case 422:
         if (data.errors) {
