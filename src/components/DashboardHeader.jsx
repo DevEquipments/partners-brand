@@ -25,7 +25,7 @@ const DashboardHeader = ({
       }}
     >
       {/* Orange top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500" />
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-orange-500 via-amber-400 to-orange-500" />
 
       {/* Ambient glow — left orange orb */}
       <div
@@ -66,9 +66,9 @@ const DashboardHeader = ({
       />
 
       {/* Content */}
-      <div className="relative flex flex-wrap items-center gap-4 px-6 py-[22px]">
+      <div className="relative flex flex-wrap items-center gap-4 px-6 py-5.5">
         {/* Title */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <h1 className="text-[17px] font-bold text-white leading-tight mb-0.5">
             {title}
           </h1>
@@ -76,12 +76,12 @@ const DashboardHeader = ({
         </div>
 
         {/* Divider */}
-        <div className="w-px h-9 bg-white/8 flex-shrink-0 hidden sm:block" />
+        <div className="w-px h-9 bg-white/8 hrink-0 hidden sm:block" />
 
         {/* Stat chips */}
         <div className="flex flex-wrap items-center gap-2 flex-1">
-          <div className="flex items-center gap-1.5 px-3 py-[7px] rounded-[10px] bg-white/5 border border-white/9">
-            <Users className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 px-3 py-1.75 rounded-[10px] bg-white/5 border border-white/9">
+            <Users className="w-3.5 h-3.5 text-orange-400 shrink-0" />
             <span className="text-[15px] font-bold text-white leading-none">
               {total}
             </span>
@@ -90,8 +90,8 @@ const DashboardHeader = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-[7px] rounded-[10px] bg-blue-500/10 border border-blue-500/20">
-            <AlertCircle className="w-3.5 h-3.5 text-blue-300 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 px-3 py-1.75 rounded-[10px] bg-blue-500/10 border border-blue-500/20">
+            <AlertCircle className="w-3.5 h-3.5 text-blue-300 shrink-0" />
             <span className="text-[15px] font-bold text-blue-200 leading-none">
               {counts.new}
             </span>
@@ -100,8 +100,8 @@ const DashboardHeader = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-[7px] rounded-[10px] bg-amber-500/10 border border-amber-500/20">
-            <Phone className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 px-3 py-1.75 rounded-[10px] bg-amber-500/10 border border-amber-500/20">
+            <Phone className="w-3.5 h-3.5 text-amber-300 shrink-0" />
             <span className="text-[15px] font-bold text-amber-200 leading-none">
               {counts.contacted}
             </span>
@@ -110,8 +110,8 @@ const DashboardHeader = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-[7px] rounded-[10px] bg-emerald-500/10 border border-emerald-500/20">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 px-3 py-1.75 rounded-[10px] bg-emerald-500/10 border border-emerald-500/20">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
             <span className="text-[15px] font-bold text-emerald-200 leading-none">
               {counts.resolved}
             </span>
@@ -122,10 +122,10 @@ const DashboardHeader = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={doExport}
-            className="flex items-center gap-1.5 px-3.5 py-[7px] rounded-[9px]
+            className="flex items-center gap-1.5 px-3.5 py-1.75 rounded-[9px]
           bg-white/8 border border-white/12 text-slate-200
           text-xs font-semibold hover:bg-white/14 transition-all cursor-pointer"
           >
@@ -135,7 +135,7 @@ const DashboardHeader = ({
           {onRefresh && (
             <button
               onClick={onRefresh}
-              className="flex items-center gap-1.5 px-3.5 py-[7px] rounded-[9px]
+              className="flex items-center gap-1.5 px-3.5 py-1.75 rounded-[9px]
           text-white text-xs font-bold cursor-pointer transition-opacity hover:opacity-90
           border border-orange-500/30"
               style={{

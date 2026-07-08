@@ -218,7 +218,7 @@ const InquiryDetailPanel = ({ inquiry, onClose, onStatusChange }) => {
   return (
     <div className="flex flex-col h-full">
       <div
-        className={`flex items-center justify-between px-5 py-4 bg-gradient-to-r border-b ${s.header} shrink-0`}
+        className={`flex items-center justify-between px-5 py-4 bg-linear-to-r border-b ${s.header} shrink-0`}
       >
         <div className="flex items-center gap-3">
           <Avatar name={inquiry.name} size="md" />

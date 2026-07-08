@@ -207,7 +207,7 @@ const Dashboard = () => {
     <div className="space-y-6">
 
       {/* ── Welcome banner ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-orange-950 to-orange-700 px-8 py-7 text-white">
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-zinc-900 via-orange-950 to-orange-700 px-8 py-7 text-white">
         <div className="absolute -top-24 -right-24 w-72 h-72 bg-orange-400/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
