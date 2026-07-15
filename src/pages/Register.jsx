@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { registerUser } from "../services/authApi";
+import { getPremiumBrandsList } from "../services/premiumBrands";
 import toast from "react-hot-toast";
 import {
   User,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import { Users, BarChart3, Shield } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 
 // Each step owns its own set of fields so we only validate what's
 // actually on screen before letting someone move forward.
@@ -57,8 +59,14 @@ const Register = () => {
   const [stepError, setStepError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [brandsList, setBrandsList] = useState([]);
+  const [brandSearch, setBrandSearch] = useState("");
+  const [isBrandOpen, setIsBrandOpen] = useState(false);
+  const [isBrandsLoading, setIsBrandsLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const dropdownRef = useRef(null);
 
   const { login } = useAuth();
 
@@ -73,6 +81,53 @@ const Register = () => {
     mode: "onBlur",
     shouldUnregister: false,
   });
+
+  useEffect(() => {
+    if (isBrandOpen && brandsList.length === 0) {
+      fetchBrands();
+    }
+  }, [isBrandOpen]);
+
+  const fetchBrands = async (search = "") => {
+    try {
+      setIsBrandsLoading(true);
+
+      const response = await getPremiumBrandsList({
+        brand_name: search,
+      });
+
+      setBrandsList(response?.data || []);
+    } catch (error) {
+      console.error(error);
+      setBrandsList([]);
+    } finally {
+      setIsBrandsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isBrandOpen) return;
+
+    const timer = setTimeout(() => {
+      if (brandSearch.length >= 2 || brandSearch.length === 0) {
+        fetchBrands(brandSearch);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [brandSearch, isBrandOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsBrandOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const password = watch("password", "");
   const currentStepData = STEPS[currentStep - 1];
@@ -174,7 +229,7 @@ const Register = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Hero Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-gradient-to-br from-slate-900 via-orange-900/80 to-orange-700">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-linear-to-br from-slate-900 via-orange-900/80 to-orange-700">
         {/* Background Effects */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
@@ -296,7 +351,7 @@ const Register = () => {
           <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 md:p-10">
             {/* Mobile Logo */}
             <div className="lg:hidden flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-linear-to-br from-primary-600 to-secondary-600 rounded-xl flex items-center justify-center">
                 <Hexagon className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -322,7 +377,7 @@ const Register = () => {
 
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500"
+                  className="h-full bg-linear-to-r from-orange-500 to-orange-600 transition-all duration-500"
                   style={{
                     width: `${(currentStep / STEPS.length) * 100}%`,
                   }}
@@ -365,21 +420,76 @@ const Register = () => {
                         <label className="block text-sm font-medium text-surface-700 mb-1.5">
                           Brand Name
                         </label>
-                        <div className="relative">
-                          <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+
+                        <div className="relative" ref={dropdownRef}>
+                          <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 z-10" />
+
                           <input
                             type="text"
-                            placeholder="Your brand name"
-                            className={`w-full px-3 py-3 border border-surface-200 rounded-lg text-sm text-surface-900 bg-white transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100 outline-none pl-10 ${
+                            placeholder="Search Brand..."
+                            value={brandSearch}
+                            onFocus={() => setIsBrandOpen(true)}
+                            onChange={(e) => {
+                              setBrandSearch(e.target.value);
+                              setIsBrandOpen(true);
+                            }}
+                            className={`w-full h-12.5 pl-10 pr-10 border rounded-lg text-sm bg-white ${
                               errors.brand_name
-                                ? "border-red-300 focus:ring-red-100"
-                                : ""
+                                ? "border-red-300"
+                                : "border-surface-200 hover:border-orange-300"
                             }`}
+                          />
+
+                          <ChevronDown
+                            onClick={() => setIsBrandOpen(!isBrandOpen)}
+                            className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 cursor-pointer transition-transform ${
+                              isBrandOpen ? "rotate-180" : ""
+                            }`}
+                          />
+
+                          {isBrandOpen && (
+                            <div className="absolute z-50 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                              <div className="max-h-60 overflow-y-auto">
+                                {brandsList.length > 0 ? (
+                                  brandsList.map((item, index) => {
+                                    const brandName =
+                                      item.brand_name || item.name || item;
+
+                                    return (
+                                      <button
+                                        key={index}
+                                        type="button"
+                                        onClick={() => {
+                                          setValue("brand_name", brandName, {
+                                            shouldValidate: true,
+                                          });
+
+                                          setBrandSearch(brandName);
+                                          setIsBrandOpen(false);
+                                        }}
+                                        className="w-full px-4 py-3 text-left hover:bg-orange-50"
+                                      >
+                                        {brandName}
+                                      </button>
+                                    );
+                                  })
+                                ) : (
+                                  <div className="p-4 text-sm text-slate-500 text-center">
+                                    No brands found
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          <input
+                            type="hidden"
                             {...register("brand_name", {
                               required: "Brand name is required",
                             })}
                           />
                         </div>
+
                         {errors.brand_name && (
                           <p className="mt-1 text-xs text-red-500 font-medium">
                             {errors.brand_name.message}
@@ -772,7 +882,7 @@ const Register = () => {
 
               {stepError && (
                 <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>
                     Please fix the highlighted fields before continuing.
                   </span>
@@ -785,7 +895,7 @@ const Register = () => {
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-surface-600 hover:text-surface-900 transition-colors"
+                    className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-surface-600 hover:text-surface-900 transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     Back
@@ -794,9 +904,9 @@ const Register = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className=" cursor-pointer flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl
-      hover:opacity-90 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
-      disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-orange-500/25"
+                  className=" cursor-pointer flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-linear-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl
+                              hover:opacity-90 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                              disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-orange-500/25"
                 >
                   {isLoading ? (
                     <>

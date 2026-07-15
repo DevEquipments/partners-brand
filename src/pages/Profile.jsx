@@ -49,7 +49,7 @@ const FieldRow = ({ icon: Icon, label, value, copyKey, onCopy, isCopied }) => (
         {label}
       </p>
       {value ? (
-        <p className="text-[13px] font-semibold text-zinc-800 break-words leading-snug">
+        <p className="text-[13px] font-semibold text-zinc-800 wrap-break-word leading-snug">
           {value}
         </p>
       ) : (
@@ -161,6 +161,8 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(!user);
   const { copied, copy } = useCopy();
 
+  // console.log("user", user);
+
   useEffect(() => {
     if (!user) fetchProfile().finally(() => setIsLoading(false));
   }, [user, fetchProfile]);
@@ -201,7 +203,7 @@ const Profile = () => {
   return (
     <div className="space-y-5 animate-fade-in">
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-orange-950 to-orange-700 px-6 sm:px-8 py-7">
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-zinc-900 via-orange-950 to-orange-700 px-6 sm:px-8 py-7">
         <div className="absolute -top-10 -right-10 w-64 h-64 bg-orange-400/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
         <div
@@ -217,21 +219,21 @@ const Profile = () => {
           {/* Identity */}
           <div className="flex items-center gap-4">
             <div
-              className="w-[72px] h-[72px] sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600
+              className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-linear-to-br from-orange-400 to-orange-600
               flex items-center justify-center ring-4 ring-white/20 shadow-xl shrink-0"
             >
               <span className="text-2xl font-bold text-white">{initials}</span>
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h1 className="text-xl sm:text-2xl font-bold text-white">
+                <h1 className="text-xl sm:text-2xl font-bold text-white capitalize">
                   {displayName}
                 </h1>
                 <span className="inline-flex items-center gap-1 bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-md text-[10px] font-bold">
                   <BadgeCheck className="w-3 h-3" /> Verified
                 </span>
               </div>
-              <p className="text-sm text-orange-100/70">
+              <p className="text-sm text-orange-100/70 capitalize">
                 {user?.company_name || "Brand Partner"} · @{user?.username}
               </p>
               <div className="flex items-center gap-1.5 mt-2 text-xs text-orange-100/60">
@@ -368,7 +370,7 @@ const Profile = () => {
                 </div>
                 <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-all"
+                    className="h-full bg-linear-to-r from-orange-500 to-amber-400 rounded-full transition-all"
                     style={{ width: `${completion}%` }}
                   />
                 </div>
