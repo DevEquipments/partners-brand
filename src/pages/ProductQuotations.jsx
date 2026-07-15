@@ -29,23 +29,6 @@ import {
 import DashboardHeader from "../components/DashboardHeader";
 import { getProductQuotations } from "../services/productQuotation";
 
-// ─── API ──────────────────────────────────────────────────────────────────────
-// const fetchFeatureEquipmentQuotes = async ({ brand_id, page = 1, token }) => {
-//   const form = new FormData();
-//   form.append("brand_id", brand_id);
-//   form.append("page", page);
-//   const res = await fetch(
-//     "https://partners.equipmentsdekho.com/apis/api/get-feature-equipment-quotes",
-//     {
-//       method: "POST",
-//       headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-//       body: form,
-//     },
-//   );
-//   if (!res.ok) throw new Error(`${res.status}`);
-//   return res.json();
-// };
-
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STATUSES = [
   {

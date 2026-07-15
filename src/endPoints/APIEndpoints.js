@@ -26,8 +26,13 @@ const API_ENDPOINTS = {
 
   getFeatureEquipmentQuotes: {
     url: "/get-feature-equipment-quotes",
+    method: "post"
+  },
+  endPointPremiumBrandsList: {
+    url: "get-PremiumBrandsList",
     method: "post",
   },
+
 };
 
 export default API_ENDPOINTS;

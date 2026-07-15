@@ -42,7 +42,7 @@ const Login = () => {
         password: data.password,
       });
 
-      console.log("respose", response);
+      // console.log("respose", response);
       const token =
         response.token || response.data?.token || response.access_token;
 
@@ -68,7 +68,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex bg-slate-50">
       {/* Left Hero Section - Desktop Only */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-gradient-to-br from-slate-900 via-orange-900/80 to-orange-700">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-linear-to-br from-slate-900 via-orange-900/80 to-orange-700">
         {/* Animated Background Elements */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
@@ -170,7 +170,7 @@ const Login = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-linear-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
                 <span className="text-white font-bold text-lg">ED</span>
               </div>
               <div>
@@ -292,7 +292,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="h-12 w-full cursor-pointer rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 font-semibold text-white transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="h-12 w-full cursor-pointer rounded-xl bg-linear-to-r from-orange-500 to-orange-600 font-semibold text-white transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>

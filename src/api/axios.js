@@ -46,7 +46,7 @@ API.interceptors.response.use(
       data?.error ||
       "Something went wrong.";
 
-    console.log("API Error:", status, message, data);
+    console.error("API Error:", status, message, data);
 
     switch (status) {
       case 400:

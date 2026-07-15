@@ -249,7 +249,7 @@ const DetailPanel = ({ lead, onClose, onStageChange, onScoreChange, notes, setNo
   return (
     <div className="flex flex-col h-full">
       {/* Score-tinted header */}
-      <div className={`px-5 py-4 bg-gradient-to-r border-b ${score.header} shrink-0`}>
+      <div className={`px-5 py-4 bg-linear-to-r border-b ${score.header} shrink-0`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Avatar name={lead.name} score={lead.score} size="md" />
@@ -522,10 +522,10 @@ const Leads = () => {
     <div className="flex flex-col gap-4 h-[calc(100vh-88px)] animate-fade-in">
 
       {/* ── Dark banner ── */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900 via-slate-800 to-slate-900 px-6 py-5 shrink-0">
+      <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-zinc-900 via-slate-800 to-slate-900 px-6 py-5 shrink-0">
         <div className="absolute inset-0 opacity-[0.04]"
           style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500" />
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-orange-500 via-amber-400 to-orange-500" />
 
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
