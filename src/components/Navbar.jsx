@@ -65,7 +65,7 @@ const Navbar = ({ onMenuToggle }) => {
             <span className="text-[11px] font-bold text-white">{initials}</span>
           </div>
         </Link>
-        <button
+        {/* <button
           onClick={async () => {
             await logout();
             navigate("/login");
@@ -73,7 +73,7 @@ const Navbar = ({ onMenuToggle }) => {
           className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
         >
           <LogOut className="w-4.25 h-4.25" />
-        </button>
+        </button> */}
       </div>
     </header>
   );

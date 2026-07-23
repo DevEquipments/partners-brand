@@ -11,7 +11,7 @@ import {
   Users,
   FileText,
   MessageSquare,
-  Settings,
+  // Settings,
 } from "lucide-react";
 
 const NAV = [
@@ -20,7 +20,7 @@ const NAV = [
   { label: "Customer Inquiries", path: "/inquiries", icon: MessageSquare },
   { label: "Product Quotations", path: "/product-quotes", icon: FileText },
   { label: "Profile", path: "/profile", icon: User },
-  { label: "Settings", path: "/settings", icon: Settings },
+  // { label: "Settings", path: "/settings", icon: Settings },
 ];
 
 const Sidebar = ({

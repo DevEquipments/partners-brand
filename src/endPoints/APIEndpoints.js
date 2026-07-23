@@ -33,6 +33,11 @@ const API_ENDPOINTS = {
     method: "post",
   },
 
+  update_Profile: {
+    url: "update-profile",
+    method: "post"
+  }
+
 };
 
 export default API_ENDPOINTS;
