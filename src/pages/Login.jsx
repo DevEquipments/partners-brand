@@ -280,12 +280,12 @@ const Login = () => {
                     Remember me
                   </span>
                 </label>
-                <Link
+                {/* <Link
                   to="/forgot-password"
                   className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
                 >
                   Forgot password?
-                </Link>
+                </Link> */}
               </div>
 
               {/* Submit Button */}
@@ -306,7 +306,7 @@ const Login = () => {
             </form>
 
             {/* Divider */}
-            <div className="border-t border-slate-200 mt-10 pt-6">
+            {/* <div className="border-t border-slate-200 mt-10 pt-6">
               <p className="text-center text-slate-600">
                 Don't have an account?{" "}
                 <Link
@@ -316,7 +316,7 @@ const Login = () => {
                   Create one
                 </Link>
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
