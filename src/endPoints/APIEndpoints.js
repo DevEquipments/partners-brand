@@ -36,6 +36,11 @@ const API_ENDPOINTS = {
   update_Profile: {
     url: "update-profile",
     method: "post"
+  },
+
+  getDashboardData: {
+    url: "get-dashboard-data",
+    method: "post"
   }
 
 };
