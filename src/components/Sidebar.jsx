@@ -65,7 +65,7 @@ const Sidebar = ({
           ${isCollapsed ? "justify-center px-3" : "px-4 gap-3"}`}
         >
           <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shrink-0 shadow-sm">
-            <img src="/public/logo.jpg" alt="" />
+            <img src="/logo.jpg" alt="" />
             {/* <Hexagon className="w-4 h-4 text-white" /> */}
           </div>
           {!isCollapsed && (
