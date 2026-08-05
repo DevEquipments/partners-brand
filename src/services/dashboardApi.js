@@ -3,6 +3,7 @@ import { apiRequest } from "../api/apiRequest";
 
 
 export const getDashboardData = (payload) =>
+    // console.log("payload", payload)
     apiRequest({
         ...API_ENDPOINTS.getDashboardData,
         data: payload,

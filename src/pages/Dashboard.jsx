@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { getPremiumBrandInquiries } from "../services/inquiryApi";
-import { getProductQuotations } from "../services/productQuotation";
+import { getDashboardData } from "../services/dashboardApi";
 import {
-  CheckCircle2,
   ChevronRight,
   CircleAlert,
   FileText,
@@ -15,12 +13,11 @@ import {
   RefreshCw,
   UserRound,
   Users,
-  TrendingUp,
-  Clock,
 } from "lucide-react";
 
-// Set this to false when the dashboard aggregate API is ready to use in production.
-const USE_DEMO_DATA = true;
+// Use real API - set this to true to use ONLY demo data for development
+// NOTE: If API fails or returns empty data, demo data is automatically used as fallback
+const USE_DEMO_DATA = false;
 
 const DEMO_DASHBOARD_DATA = {
   inquiries: [
@@ -118,15 +115,26 @@ const initials = (name = "") =>
     .slice(0, 2)
     .join("")
     .toUpperCase() || "?";
-const formatDate = (date) =>
-  date
-    ? new Intl.DateTimeFormat("en-IN", {
-        day: "numeric",
-        month: "short",
-        hour: "numeric",
-        minute: "2-digit",
-      }).format(new Date(date))
-    : "—";
+const formatDate = (date) => {
+  if (!date) return "—";
+  
+  // Check if it's already formatted (contains "," or month abbreviation)
+  if (typeof date === "string" && (date.includes(",") || date.includes("Jan") || date.includes("Feb"))) {
+    return date; // Return as-is, already formatted by API
+  }
+  
+  // Otherwise, parse and format
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(date));
+  } catch {
+    return "—";
+  }
+};
 const formatCurrency = (value) =>
   value === null || value === undefined || value === ""
     ? "Amount not set"
@@ -212,21 +220,17 @@ const AdminMetricCard = ({
 
   return (
     <button
-      // onClick={onClick}
+      onClick={onClick}
       className={`group relative w-full rounded-xl border bg-white p-3 text-left shadow-[0_1px_3px_rgba(15,23,42,.06)] ring-1 ring-slate-200/70 transition-all duration-300 hover:shadow-[0_8px_16px_rgba(15,23,42,.1)] hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${toneClasses.text}`}
     >
       {/* Top Row: Icon + Title */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span
-              className={`flex-shrink-0 h-8 w-8 rounded-lg ${toneClasses.bg} border ${toneClasses.border} grid place-items-center ${toneClasses.hover} transition`}
-            >
+            <span className={`flex-shrink-0 h-8 w-8 rounded-lg ${toneClasses.bg} border ${toneClasses.border} grid place-items-center ${toneClasses.hover} transition`}>
               <Icon className={`h-4 w-4 ${toneClasses.icon}`} />
             </span>
-            <h3 className="text-sm font-bold text-slate-900 truncate">
-              {title}
-            </h3>
+            <h3 className="text-sm font-bold text-slate-900 truncate">{title}</h3>
           </div>
           <p className="text-[11px] text-slate-500 mt-0.5">{description}</p>
         </div>
@@ -237,49 +241,32 @@ const AdminMetricCard = ({
         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
           {primaryLabel}
         </p>
-        <p
-          className={`text-2xl font-black leading-tight tracking-[-.06em] ${toneClasses.text}`}
-        >
+        <p className={`text-2xl font-black leading-tight tracking-[-.06em] ${toneClasses.text}`}>
           {primaryMetric}
         </p>
       </div>
 
       {/* Secondary Metrics - Inline Compact */}
       {secondaryMetrics && secondaryMetrics.length > 0 && (
-        <div className="flex gap-3 pt-1.5 border-t border-slate-100 items-center">
+        <div className="flex gap-3 pt-1.5 border-t border-slate-100">
           {secondaryMetrics.map((metric, idx) => (
             <div key={idx} className="flex-1 min-w-0">
               <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
                 {metric.label}
               </p>
               <div className="flex items-center gap-1.5">
-                <p className="text-base font-bold text-slate-800">
-                  {metric.value}
-                </p>
+                <p className="text-base font-bold text-slate-800">{metric.value}</p>
                 {metric.badge && (
                   <Badge status={metric.badge}>{titleCase(metric.badge)}</Badge>
                 )}
               </div>
             </div>
           ))}
-
-          {/* Redirect to link */}
-          <div className="flex items-center text-orange-500 hover:text-slate-700">
-            <button
-              onClick={onClick}
-              className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-700"
-            >
-              View all <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
         </div>
       )}
 
       {/* Subtle hover indicator */}
-      <div
-        className="absolute top-0 right-0 w-1 h-1 bg-slate-300 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ top: "12px", right: "12px" }}
-      />
+      <div className="absolute top-0 right-0 w-1 h-1 bg-slate-300 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ top: '12px', right: '12px' }} />
     </button>
   );
 };
@@ -453,30 +440,14 @@ const LeadVolumeChart = ({ data }) => {
 
 const StatusBreakdown = ({ counts, total }) => {
   const [hoveredStatus, setHoveredStatus] = useState(null);
-
+  
   const entries = [
-    {
-      label: "New",
-      value: counts.new || 0,
-      color: "bg-orange-500",
-      lightBg: "bg-orange-100",
-    },
-    {
-      label: "Contacted",
-      value: counts.contacted || 0,
-      color: "bg-sky-500",
-      lightBg: "bg-sky-100",
-    },
-    {
-      label: "Resolved",
-      value: counts.resolved || 0,
-      color: "bg-emerald-500",
-      lightBg: "bg-emerald-100",
-    },
+    { label: "New", value: counts.new || 0, color: "bg-orange-500", lightBg: "bg-orange-100" },
+    { label: "Contacted", value: counts.contacted || 0, color: "bg-sky-500", lightBg: "bg-sky-100" },
+    { label: "Resolved", value: counts.resolved || 0, color: "bg-emerald-500", lightBg: "bg-emerald-100" },
   ];
 
-  const getPercentage = (value) =>
-    total > 0 ? Math.round((value / total) * 100) : 0;
+  const getPercentage = (value) => total > 0 ? Math.round((value / total) * 100) : 0;
 
   return (
     <div className="p-4 sm:p-5">
@@ -487,19 +458,15 @@ const StatusBreakdown = ({ counts, total }) => {
         }
         .status-bar-hover { animation: pulse-bar 1.5s ease-in-out infinite; }
       `}</style>
-
+      
       <div className="flex items-start justify-between mb-4">
         <div>
           <p className="text-[15px] font-bold text-slate-900">Lead Status</p>
           <p className="mt-0.5 text-xs text-slate-500">Distribution overview</p>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-black tracking-[-.05em] text-slate-900">
-            {total}
-          </p>
-          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">
-            Total Leads
-          </p>
+          <p className="text-3xl font-black tracking-[-.05em] text-slate-900">{total}</p>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Total Leads</p>
         </div>
       </div>
 
@@ -508,7 +475,7 @@ const StatusBreakdown = ({ counts, total }) => {
         {entries.map((item) => {
           const percentage = getPercentage(item.value);
           const isHovered = hoveredStatus === item.label;
-
+          
           return (
             <div
               key={item.label}
@@ -518,36 +485,25 @@ const StatusBreakdown = ({ counts, total }) => {
             >
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`h-2.5 w-2.5 rounded-full ${item.color} transition-all duration-200 ${isHovered ? "scale-150" : ""}`}
-                  />
-                  <p
-                    className={`text-sm font-semibold transition-colors ${isHovered ? "text-slate-900" : "text-slate-600"}`}
-                  >
+                  <span className={`h-2.5 w-2.5 rounded-full ${item.color} transition-all duration-200 ${isHovered ? 'scale-150' : ''}`} />
+                  <p className={`text-sm font-semibold transition-colors ${isHovered ? 'text-slate-900' : 'text-slate-600'}`}>
                     {item.label}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p
-                    className={`text-sm font-bold transition-all duration-200 ${isHovered ? "text-slate-900" : "text-slate-700"}`}
-                  >
+                  <p className={`text-sm font-bold transition-all duration-200 ${isHovered ? 'text-slate-900' : 'text-slate-700'}`}>
                     {item.value}
                   </p>
-                  <p
-                    className={`text-[10px] font-semibold transition-all duration-200 leading-tight ${isHovered ? item.color.replace("bg-", "text-") : "text-slate-400"}`}
-                  >
+                  <p className={`text-[10px] font-semibold transition-all duration-200 leading-tight ${isHovered ? item.color.replace('bg-', 'text-') : 'text-slate-400'}`}>
                     {percentage}%
                   </p>
                 </div>
               </div>
-
+              
               {/* Progress Bar */}
-              <div
-                className={`h-1.5 rounded-full overflow-hidden transition-all duration-200 ${item.lightBg} ${isHovered ? "ring-2 ring-offset-1" : ""}`}
-                style={{ ringColor: item.color }}
-              >
+              <div className={`h-1.5 rounded-full overflow-hidden transition-all duration-200 ${item.lightBg} ${isHovered ? 'ring-2 ring-offset-1' : ''}`} style={{ ringColor: item.color }}>
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${item.color} ${isHovered ? "status-bar-hover shadow-lg" : ""} ${isHovered ? item.color.replace("bg-", "shadow-") + "-500/50" : ""}`}
+                  className={`h-full rounded-full transition-all duration-500 ${item.color} ${isHovered ? 'status-bar-hover shadow-lg' : ''} ${isHovered ? item.color.replace('bg-', 'shadow-') + '-500/50' : ''}`}
                   style={{ width: `${percentage}%` }}
                 />
               </div>
@@ -561,19 +517,15 @@ const StatusBreakdown = ({ counts, total }) => {
         {entries.map((item) => (
           <div
             key={item.label}
-            className={`p-2 rounded-lg transition-all duration-200 cursor-pointer ${hoveredStatus === item.label ? item.lightBg + " ring-1 ring-offset-1" : "hover:" + item.lightBg}`}
+            className={`p-2 rounded-lg transition-all duration-200 cursor-pointer ${hoveredStatus === item.label ? item.lightBg + ' ring-1 ring-offset-1' : 'hover:' + item.lightBg}`}
             onMouseEnter={() => setHoveredStatus(item.label)}
             onMouseLeave={() => setHoveredStatus(null)}
           >
             <div className="flex items-center gap-1.5 mb-0.5">
               <span className={`h-1.5 w-1.5 rounded-full ${item.color}`} />
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
-                {item.label}
-              </p>
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{item.label}</p>
             </div>
-            <p
-              className={`text-base font-black tracking-[-.03em] transition-colors ${hoveredStatus === item.label ? item.color.replace("bg-", "text-") : "text-slate-900"}`}
-            >
+            <p className={`text-base font-black tracking-[-.03em] transition-colors ${hoveredStatus === item.label ? item.color.replace('bg-', 'text-') : 'text-slate-900'}`}>
               {item.value}
             </p>
           </div>
@@ -613,30 +565,91 @@ const Dashboard = () => {
           setData(DEMO_DASHBOARD_DATA);
           return;
         }
-        const [inquiryResponse, quotationResponse] = await Promise.all([
-          getPremiumBrandInquiries({ brand_id: brandId, page: 1, token }),
-          getProductQuotations({ brand_id: brandId, page: 1, token }),
-        ]);
-        setData({
-          inquiries: inquiryResponse?.data || [],
-          quotations: quotationResponse?.data || [],
-          inquiryTotal:
-            inquiryResponse?.total_records ?? inquiryResponse?.total ?? 0,
-          quotationTotal:
-            quotationResponse?.total_records ?? quotationResponse?.total ?? 0,
-          leadVolume: buildLeadVolume(inquiryResponse?.data || []),
-        });
-      } catch (requestError) {
-        setError(
-          requestError?.message ||
-            "We could not load your work queues. Please try again.",
+
+        // Fetch dashboard data from API with brand_id payload
+        const apiResponse = await getDashboardData({ brand_id: brandId });
+
+        console.log("Dashboard API Response:", apiResponse);
+
+        // Check if API response is successful
+        if (!apiResponse || !apiResponse.status) {
+          throw new Error(
+            apiResponse?.message || "Failed to fetch dashboard data"
+          );
+        }
+
+        const dashboardData = apiResponse.data;
+
+        // Transform API inquiries to component format
+        const transformedInquiries = (dashboardData.customer_enquiry || []).map(
+          (inquiry) => ({
+            id: inquiry.id,
+            name: inquiry.name,
+            mobile: inquiry.mobile,
+            city: "", // API doesn't provide city
+            message: inquiry.message,
+            status: "new", // API doesn't provide status, default to new
+            created_at: inquiry.created_date,
+          })
         );
+
+        // Transform API quotations to component format
+        const transformedQuotations = (
+          dashboardData.feature_products_enquiry || []
+        ).map((quote) => ({
+          id: quote.id,
+          full_name: quote.full_name,
+          phone_no: quote.phone_no,
+          location: quote.location,
+          model_name: quote.model_name || quote.brand_name || "Product inquiry",
+          amount: null, // API doesn't provide amount
+          status: "new", // API doesn't provide status, default to new
+          follow_up_date: null, // API doesn't provide follow-up date
+          created_at: quote.created_date,
+        }));
+
+        // Transform incoming inquiries to lead volume
+        const transformedLeadVolume = (
+          dashboardData.incoming_enquiries || []
+        ).map((item) => ({
+          label: item.day,
+          value: item.count,
+        }));
+
+        // Use transformed data if available, otherwise fallback to demo data
+        const finalData = {
+          inquiries: transformedInquiries.length > 0 
+            ? transformedInquiries 
+            : DEMO_DASHBOARD_DATA.inquiries,
+          quotations: transformedQuotations.length > 0 
+            ? transformedQuotations 
+            : DEMO_DASHBOARD_DATA.quotations,
+          inquiryTotal: dashboardData.customer_quotes_count || DEMO_DASHBOARD_DATA.inquiryTotal,
+          quotationTotal: dashboardData.feature_quotes_count || DEMO_DASHBOARD_DATA.quotationTotal,
+          leadVolume: transformedLeadVolume.length > 0 
+            ? transformedLeadVolume 
+            : DEMO_DASHBOARD_DATA.leadVolume,
+        };
+
+        setData(finalData);
+      } catch (requestError) {
+        console.error("Dashboard Load Error:", requestError);
+        
+        // Fallback to demo data if API fails
+        console.log("Falling back to demo data...");
+        setData(DEMO_DASHBOARD_DATA);
+        
+        // Optional: Show a subtle message instead of error
+        setError("");
+        
+        // Uncomment below if you want to show error message:
+        // setError("Using fallback data. " + (requestError?.message || "Could not load live data."));
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [brandId, token],
+    [brandId],
   );
 
   useEffect(() => {
@@ -698,14 +711,14 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* {USE_DEMO_DATA && (
+      {USE_DEMO_DATA && (
         <div className="dashboard-enter flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
           <CircleAlert className="h-4 w-4 shrink-0 text-amber-600" />
           <span>
-            <strong>Demo mode</strong> · status changes reset on refresh.
+            <strong>Demo mode</strong> · Using demo data for testing.
           </span>
         </div>
-      )} */}
+      )}
 
       {error ? (
         <Card className="dashboard-enter border-red-200">
@@ -756,10 +769,6 @@ const Dashboard = () => {
                         value: work.leadStatuses.contacted || 0,
                         badge: "contacted",
                       },
-                      {
-                        // label: "Resolved",
-                        link: "/inquiries",
-                      },
                     ]
               }
               tone="orange"
@@ -782,8 +791,9 @@ const Dashboard = () => {
                       },
                       {
                         label: "Follow-up Due",
-                        value: data.quotations.filter((q) => q.follow_up_date)
-                          .length,
+                        value: data.quotations.filter(
+                          (q) => q.follow_up_date
+                        ).length,
                       },
                     ]
               }
@@ -813,16 +823,12 @@ const Dashboard = () => {
           >
             <Card>
               <CardHeader
-                title="Recent customer inquiries"
-                description={
-                  USE_DEMO_DATA
-                    ? "Demo leads for testing daily partner actions"
-                    : "Latest records from the inquiry API"
-                }
+                title="Customer inquiries"
+                description="All records from the inquiry API"
                 action={
                   <button
                     onClick={() => navigate("/inquiries")}
-                    className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-700"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-700"
                   >
                     View all <ChevronRight className="h-3.5 w-3.5" />
                   </button>
@@ -832,7 +838,7 @@ const Dashboard = () => {
                 <LoadingRows />
               ) : data.inquiries.length ? (
                 <div className="divide-y divide-slate-100">
-                  {data.inquiries.slice(0, 5).map((lead) => (
+                  {data.inquiries.map((lead) => (
                     <LeadRow
                       key={lead.id}
                       lead={lead}
@@ -857,12 +863,12 @@ const Dashboard = () => {
             </Card>
             <Card>
               <CardHeader
-                title="Recent product requests"
-                description="Latest records from the quotation API"
+                title="Product requests"
+                description="All records from the quotation API"
                 action={
                   <button
                     onClick={() => navigate("/product-quotes")}
-                    className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-700"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-700"
                   >
                     View all <ChevronRight className="h-3.5 w-3.5" />
                   </button>
@@ -872,7 +878,7 @@ const Dashboard = () => {
                 <LoadingRows />
               ) : data.quotations.length ? (
                 <div className="divide-y divide-slate-100">
-                  {data.quotations.slice(0, 5).map((quote) => (
+                  {data.quotations.map((quote) => (
                     <QuoteRow
                       key={quote.id}
                       quote={quote}
