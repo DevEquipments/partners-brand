@@ -1,24 +1,20 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Building2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { loginUser } from "../services/authApi";
+import Input from "../components/common/Input";
+import Button from "../components/common/Button";
+import Checkbox from "../components/common/Checkbox";
+import ThemeToggle from "../components/layout/ThemeToggle";
 import toast from "react-hot-toast";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  Loader2,
-  BarChart3,
-  Users,
-  Shield,
-} from "lucide-react";
 import logo from "../assets/logo.png";
 
-const Login = () => {
+export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const { login, fetchProfile } = useAuth();
   const navigate = useNavigate();
 
@@ -30,294 +26,203 @@ const Login = () => {
     defaultValues: {
       email: "",
       password: "",
-      remember: false,
+      remember: true,
     },
   });
 
   const onSubmit = async (data) => {
     setIsLoading(true);
+    setAuthError("");
+
     try {
       const response = await loginUser({
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
       });
 
-      // console.log("respose", response);
       const token =
         response.token || response.data?.token || response.access_token;
+      const userData = response.user || response.data?.user;
 
       if (token) {
-        login(token, response.user || response.data?.user);
-        toast.success("Login successful! Welcome back.");
+        login(token, userData);
+        toast.success("Authentication successful. Welcome back.");
         await fetchProfile();
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       } else {
-        toast.error("Login failed. Please check your credentials.");
+        const msg = response.message || "Invalid credentials. Please verify your email and password.";
+        setAuthError(msg);
+        toast.error(msg);
       }
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Invalid email or password.";
-      toast.error(message);
+      const msg =
+        error?.message ||
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Authentication failed. Please check your credentials.";
+      setAuthError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
-      {/* Left Hero Section - Desktop Only */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-linear-to-br from-slate-900 via-orange-900/80 to-orange-700">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
-          <div
-            className="absolute bottom-20 right-20 w-96 h-96 bg-orange-400 rounded-full blur-3xl animate-pulse"
-            style={{ animationDelay: "1s" }}
-          ></div>
-          <div
-            className="absolute top-1/2 left-1/3 w-64 h-64 bg-orange-500 rounded-full blur-3xl animate-pulse"
-            style={{ animationDelay: "0.5s" }}
-          ></div>
+    <div className="min-h-screen flex bg-slate-900 text-slate-100 antialiased select-none">
+      {/* Left hero section - Industrial & Enterprise */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-950 border-r border-slate-800 p-12 flex-col justify-between">
+        {/* Subtle geometric gradient background */}
+        <div className="absolute inset-0 bg-radial-[at_top_left] from-orange-950/20 via-slate-950 to-slate-950 pointer-events-none" />
+
+        {/* Brand Header */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center p-1.5 shadow-md">
+            <img src={logo} alt="EquipmentsDekho" className="w-full h-full object-contain" />
+          </div>
+          <div>
+            <span className="text-base font-black tracking-tight text-white uppercase block">
+              Equipments Dekho
+            </span>
+            <span className="text-[11px] font-semibold text-orange-400 tracking-wider uppercase block">
+              Partner Operations Platform
+            </span>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="relative flex gap-3 flex-col z-10 max-w-lg mx-auto px-10 text-white">
-          {/* Logo */}
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-3xl px-5 py-4">
-              <img
-                src={logo}
-                alt="EquipmentsDekho"
-                className="h-12 w-auto object-contain"
-              />
-
-              <div className="w-px h-10 bg-white/20"></div>
-
-              <div>
-                <h2 className="text-xl font-bold text-white leading-none">
-                  EquipmentsDekho
-                </h2>
-                <p className="text-sm text-orange-100 mt-1">Partner Portal</p>
-              </div>
-            </div>
+        {/* Central Enterprise Message */}
+        <div className="relative z-10 max-w-md space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-xs font-semibold text-slate-300">
+            <Building2 className="w-3.5 h-3.5 text-orange-500" />
+            <span>Dedicated Brand Operations Portal</span>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-2xl xl:text-3xl font-bold tracking-tight leading-tight">
-            Manage Your Brand Partnership With Confidence
+          <h1 className="text-3xl xl:text-4xl font-black text-white tracking-tight leading-tight">
+            Streamlined Management for Heavy Equipment Brand Partners
           </h1>
 
-          {/* Description */}
-          <p className="text-sm max-w-md text-orange-100 leading-relaxed">
-            Access powerful analytics, manage customer inquiries, track leads,
-            and grow your business through EquipmentsDekho Partner Portal.
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Manage your brand operations, monitor customer inquiries, track equipment quotation requests, and collaborate seamlessly across your organization.
           </p>
 
-          {/* Feature Cards */}
-          <div className="space-y-5">
-            <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-white/20 transition-all duration-300">
-                  <BarChart3 className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-white">
-                    Real-time Analytics
-                  </h3>
-                  <p className="text-xs text-orange-100">
-                    Track leads and performance metrics instantly
-                  </p>
-                </div>
-              </div>
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800/80 text-xs">
+            <div>
+              <p className="text-slate-400">Direct Inquiries</p>
+              <p className="text-base font-bold text-white mt-0.5">Real-time Delivery</p>
             </div>
-
-            <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-white/20 transition-all duration-300">
-                  <Users className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white">Lead Management</h3>
-                  <p className="text-xs text-orange-100">
-                    Manage and respond to customer inquiries
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:bg-white/15 hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-white/20 transition-all duration-300">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white">Secure Platform</h3>
-                  <p className="text-xs text-orange-100">
-                    Enterprise-grade security for your data
-                  </p>
-                </div>
-              </div>
+            <div>
+              <p className="text-slate-400">Security</p>
+              <p className="text-base font-bold text-white mt-0.5">Role-Gated Access</p>
             </div>
           </div>
+        </div>
+
+        {/* Footer Meta */}
+        <div className="relative z-10 text-xs text-slate-500">
+          Equipments Dekho Partner Network. All rights reserved.
         </div>
       </div>
 
-      {/* Right Form Section */}
-      <div className="w-full lg:w-2/5 flex items-center justify-center px-8 lg:mx-16 py-12 bg-slate-50">
-        <div className="w-full max-w-md">
-          {/* Mobile Logo */}
-          <div className="lg:hidden mb-8">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-linear-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">ED</span>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">
-                  EquipmentsDekho
-                </h2>
-                <p className="text-xs text-slate-500 font-medium">
-                  Partner Portal
-                </p>
-              </div>
+      {/* Right form section */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-10 lg:p-16 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+        {/* Top utility row */}
+        <div className="flex items-center justify-between">
+          <div className="lg:hidden flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center p-1 shadow-sm">
+              <img src={logo} alt="EquipmentsDekho" className="w-full h-full object-contain" />
             </div>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              Equipments Dekho
+            </span>
+          </div>
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
+        </div>
+
+        {/* Form Container */}
+        <div className="w-full max-w-sm mx-auto my-auto py-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">
+              Partner Sign In
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Enter your credentials to access your brand operations platform.
+            </p>
           </div>
 
-          {/* Login Card */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 lg:p-10">
-            {/* Header */}
-            <div className="mb-10">
-              <h1 className="text-4xl font-bold tracking-tight text-slate-900 mb-2">
-                Welcome Back
-              </h1>
-              <p className="text-slate-500">
-                Sign in to your partner account to continue
-              </p>
+          {authError && (
+            <div className="mb-5 p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 animate-fade-in">
+              {authError}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <Input
+              label="Email Address"
+              type="email"
+              placeholder="partner@brand.com"
+              icon={Mail}
+              error={errors.email?.message}
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: "Enter a valid email address",
+                },
+              })}
+            />
+
+            <div>
+              <Input
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                icon={Lock}
+                endIcon={showPassword ? EyeOff : Eye}
+                onEndIconClick={() => setShowPassword(!showPassword)}
+                error={errors.password?.message}
+                {...register("password", {
+                  required: "Password is required",
+                })}
+              />
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* Email Field */}
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                  <input
-                    type="email"
-                    placeholder="you@example.com"
-                    className={`h-12 w-full rounded-xl border bg-white pl-11 pr-4 transition-all duration-200 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-orange-500 hover:border-slate-300 
-                      ${errors.email ? "border-red-300 focus:border-red-400" : "border-slate-200"}`}
-                    {...register("email", {
-                      required: "Email is required",
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "Please enter a valid email address",
-                      },
-                    })}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600 font-medium">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Password Field */}
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className={`h-12 w-full rounded-xl border bg-white pl-11 pr-11 transition-all duration-200 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-orange-500 hover:border-slate-300 ${
-                      errors.password
-                        ? "border-red-300 focus:border-red-400"
-                        : "border-slate-200"
-                    }`}
-                    {...register("password", {
-                      required: "Password is required",
-                      minLength: {
-                        value: 4,
-                        message: "Password must be at least 4 characters",
-                      },
-                    })}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors duration-200 hover:bg-slate-100 rounded-lg p-1"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-600 font-medium">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Remember Me & Forgot Password */}
-              <div className="flex justify-between items-center pt-1">
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-2 focus:ring-orange-200 cursor-pointer"
-                    {...register("remember")}
-                  />
-                  <span className="ml-2 text-sm text-slate-600">
-                    Remember me
-                  </span>
-                </label>
-                {/* <Link
-                  to="/forgot-password"
-                  className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
-                >
-                  Forgot password?
-                </Link> */}
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="h-12 w-full cursor-pointer rounded-xl bg-linear-to-r from-orange-500 to-orange-600 font-semibold text-white transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            <div className="flex items-center justify-between text-xs pt-1">
+              <Checkbox
+                label="Remember this device"
+                {...register("remember")}
+              />
+              <Link
+                to="/forgot-password"
+                className="font-semibold text-orange-600 dark:text-orange-400 hover:underline"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </button>
-            </form>
+                Forgot password?
+              </Link>
+            </div>
 
-            {/* Divider */}
-            {/* <div className="border-t border-slate-200 mt-10 pt-6">
-              <p className="text-center text-slate-600">
-                Don't have an account?{" "}
-                <Link
-                  to="/register"
-                  className="font-semibold text-orange-600 hover:text-orange-700 transition-colors"
-                >
-                  Create one
-                </Link>
-              </p>
-            </div> */}
+            <Button
+              type="submit"
+              size="lg"
+              variant="primary"
+              className="w-full mt-2"
+              isLoading={isLoading}
+              icon={ArrowRight}
+              iconPosition="right"
+            >
+              Sign In to Portal
+            </Button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Authorized partner personnel only. Activity is monitored and encrypted.
+            </p>
           </div>
+        </div>
+
+        {/* Bottom spacer */}
+        <div className="text-center text-xs text-slate-400 dark:text-slate-600">
+          Equipments Dekho Platform v2.0
         </div>
       </div>
     </div>

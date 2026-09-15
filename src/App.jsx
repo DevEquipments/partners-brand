@@ -1,41 +1,45 @@
-import { BrowserRouter } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthContext';
-import AppRoutes from './routes/AppRoutes';
+import { BrowserRouter } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "./context/ThemeContext";
+import { AuthProvider } from "./context/AuthContext";
+import AppRoutes from "./routes/AppRoutes";
 
-function App() {
+export function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#1e293b',
-              color: '#f8fafc',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: '500',
-              padding: '12px 16px',
-              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-            },
-            success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#f8fafc',
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: "#0f172a",
+                color: "#f8fafc",
+                borderRadius: "10px",
+                fontSize: "13px",
+                fontWeight: "500",
+                padding: "10px 14px",
+                border: "1px solid #1e293b",
+                boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)",
               },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#f8fafc',
+              success: {
+                iconTheme: {
+                  primary: "#10b981",
+                  secondary: "#f8fafc",
+                },
               },
-            },
-          }}
-        />
-      </AuthProvider>
+              error: {
+                iconTheme: {
+                  primary: "#ef4444",
+                  secondary: "#f8fafc",
+                },
+              },
+            }}
+          />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }
