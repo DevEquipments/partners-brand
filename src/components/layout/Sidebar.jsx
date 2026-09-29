@@ -1,10 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  MessageSquareText,
-  FileText,
-  Users,
-  User,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -12,42 +7,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useBrand } from "../../hooks/useBrand";
-import { usePermissions, MODULES } from "../../hooks/usePermissions";
+import { usePermissions } from "../../hooks/usePermissions";
+import { getNavigationSections } from "../../config/navigation";
 import Avatar from "../common/Avatar";
 import logo from "../../assets/logo.png";
-
-const ALL_NAV_ITEMS = [
-  {
-    label: "Dashboard",
-    path: "/dashboard",
-    icon: LayoutDashboard,
-    module: MODULES.DASHBOARD,
-  },
-  {
-    label: "Customer Enquiry",
-    path: "/inquiries",
-    icon: MessageSquareText,
-    module: MODULES.ENQUIRIES,
-  },
-  {
-    label: "Feature Equipment Quotes",
-    path: "/product-quotes",
-    icon: FileText,
-    module: MODULES.QUOTES,
-  },
-  {
-    label: "Sub Admin Management",
-    path: "/sub-admins",
-    icon: Users,
-    module: MODULES.SUBADMINS,
-  },
-  {
-    label: "Profile",
-    path: "/profile",
-    icon: User,
-    module: MODULES.PROFILE,
-  },
-];
 
 export const Sidebar = ({
   isCollapsed,
@@ -57,11 +20,8 @@ export const Sidebar = ({
 }) => {
   const { user, role, logout } = useAuth();
   const { brandName } = useBrand();
-  const { canAccessModule } = usePermissions();
+  const { canAccessModule, adminPermissionDefinitions, isDefinitionsLoading } = usePermissions();
   const navigate = useNavigate();
-
-  // Filter navigation items strictly based on role and permissions
-  const navItems = ALL_NAV_ITEMS.filter((item) => canAccessModule(item.module));
 
   const displayName = user?.name || user?.username || brandName || "Partner";
   const roleLabel = role === "ADMIN" ? "Admin" : "Sub Admin";
@@ -86,7 +46,7 @@ export const Sidebar = ({
       {/* Sidebar Container */}
       <aside
         className={`fixed top-0 left-0 z-50 h-screen bg-slate-900 border-r border-slate-800 text-slate-300 flex flex-col transition-all duration-250 ease-in-out select-none
-          ${isCollapsed ? "w-16" : "w-60"}
+          ${isCollapsed ? "w-16" : "w-64"}
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0 md:static md:z-auto`}
       >
@@ -104,8 +64,8 @@ export const Sidebar = ({
                 <p className="text-xs font-bold text-white tracking-tight uppercase truncate">
                   {brandName}
                 </p>
-                <p className="text-[10px] text-slate-400 font-medium tracking-wide truncate">
-                  Partner Operations
+                <p className="text-[10px] text-orange-400 font-semibold tracking-wide truncate">
+                  Brand CRM
                 </p>
               </div>
             )}
@@ -121,34 +81,71 @@ export const Sidebar = ({
           </button>
         </div>
 
-        {/* Navigation Section */}
-        <nav className="flex-1 overflow-y-auto p-2.5 space-y-1">
-          {!isCollapsed && (
-            <div className="px-2.5 pt-2 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              Operations Menu
-            </div>
-          )}
+        {/* Navigation Sections */}
+        <nav className="flex-1 overflow-y-auto p-2.5 space-y-4">
+          {getNavigationSections(role, adminPermissionDefinitions).map((section, sIdx) => {
+            // Filter items permitted for user
+            const allowedItems = section.items.filter((item) => {
+              if (item.adminOnly && role !== "ADMIN") return false;
+              return canAccessModule(item.module);
+            });
 
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={() => setIsMobileOpen(false)}
-              title={isCollapsed ? item.label : undefined}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer group ${
-                  isCollapsed ? "justify-center px-0 py-2.5" : ""
-                } ${
-                  isActive
-                    ? "bg-orange-600 text-white shadow-xs"
-                    : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
-                }`
-              }
-            >
-              <item.icon className="w-4 h-4 shrink-0 transition-colors" />
-              {!isCollapsed && <span className="truncate">{item.label}</span>}
-            </NavLink>
-          ))}
+            const isCrmSection = section.title === "CRM";
+            const showLoadingSkeleton = isCrmSection && isDefinitionsLoading && role === "ADMIN";
+
+            // If neither items nor loading skeleton to show, skip section
+            if (allowedItems.length === 0 && !showLoadingSkeleton) return null;
+
+            return (
+              <div key={sIdx} className="space-y-1">
+                {!isCollapsed && (
+                  <div className="px-3 pt-1 pb-1 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                    {section.title}
+                  </div>
+                )}
+
+                {/* Dynamic CRM loading skeleton for Admin */}
+                {showLoadingSkeleton && (
+                  <div className="space-y-1 animate-pulse">
+                    {[1, 2, 3, 4].map((n) => (
+                      <div
+                        key={n}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800/30 ${
+                          isCollapsed ? "justify-center px-0 py-2.5" : ""
+                        }`}
+                      >
+                        <div className="w-4 h-4 rounded bg-slate-800 shrink-0" />
+                        {!isCollapsed && (
+                          <div className="h-3 bg-slate-800 rounded w-20" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {allowedItems.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMobileOpen(false)}
+                    title={isCollapsed ? item.label : undefined}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer group ${
+                        isCollapsed ? "justify-center px-0 py-2.5" : ""
+                      } ${
+                        isActive
+                          ? "bg-orange-600 text-white shadow-xs"
+                          : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
+                      }`
+                    }
+                  >
+                    <item.icon className="w-4 h-4 shrink-0 transition-colors" />
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  </NavLink>
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Bottom User Area */}
@@ -181,7 +178,7 @@ export const Sidebar = ({
             ) : (
               <>
                 <ChevronLeft className="w-4 h-4" />
-                <span>Collapse Navigation</span>
+                <span>Collapse Sidebar</span>
               </>
             )}
           </button>

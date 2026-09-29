@@ -30,7 +30,7 @@ import { formatDate } from "../utils/formatters";
 import toast from "react-hot-toast";
 
 export const Profile = () => {
-  const { user, fetchProfile, loading: authLoading, role, isDummySession } = useAuth();
+  const { user, fetchProfile, loading: authLoading, role } = useAuth();
   const { hasPermission } = usePermissions();
   const canEdit = hasPermission(PERMISSIONS.PROFILE_EDIT);
 
@@ -70,11 +70,6 @@ export const Profile = () => {
   const onSaveProfile = async (formData) => {
     if (!canEdit) {
       toast.error("You do not have permission to edit profile credentials.");
-      return;
-    }
-
-    if (isDummySession) {
-      toast.error("Profile updates are disabled in test Sub Admin session.");
       return;
     }
 
@@ -154,7 +149,7 @@ export const Profile = () => {
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Verified OEM Partner</span>
+                  <span>Verified Partner</span>
                 </span>
               </div>
 

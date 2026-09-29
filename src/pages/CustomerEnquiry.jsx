@@ -3,31 +3,30 @@ import {
   Download,
   RefreshCw,
   Phone,
-  Mail,
   Eye,
-  CheckSquare,
-  Info,
 } from "lucide-react";
 import { getPremiumBrandInquiries } from "../services/inquiryApi";
 import { useBrand } from "../hooks/useBrand";
 import { useDataTable } from "../hooks/useDataTable";
 import { usePermissions, PERMISSIONS } from "../hooks/usePermissions";
+import { useCRM } from "../context/CRMContext";
 import PageHeader from "../components/common/PageHeader";
-import FilterBar from "../components/common/FilterBar";
+import TableToolbar from "../components/common/TableToolbar";
 import DataTable from "../components/common/DataTable";
-import Pagination from "../components/common/Pagination";
-import Drawer from "../components/common/Drawer";
+import LeadDetail from "../components/crm/LeadDetail";
 import StatusBadge from "../components/common/StatusBadge";
 import Button from "../components/common/Button";
 import Avatar from "../components/common/Avatar";
-import { formatDate, formatDateTime } from "../utils/formatters";
-import { getPhoneLink, getEmailLink } from "../utils/contactLinks";
+import { formatDate } from "../utils/formatters";
+import { getPhoneLink } from "../utils/contactLinks";
 import { exportToCsv } from "../utils/exportCsv";
+import { getApiErrorMessage } from "../utils/errorHandler";
 import toast from "react-hot-toast";
 
 export const CustomerEnquiry = () => {
   const { brandId, brandName } = useBrand();
   const { hasPermission } = usePermissions();
+  const { leads } = useCRM();
 
   const [inquiries, setInquiries] = useState([]);
   const [page, setPage] = useState(1);
@@ -37,14 +36,10 @@ export const CustomerEnquiry = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  // Selected inquiry for detail drawer
-  const [selectedEnquiry, setSelectedEnquiry] = useState(null);
-
-  // Local UI status state (since backend status persistence endpoint is pending)
-  const [localStatuses, setLocalStatuses] = useState({});
+  // Selected inquiry mapped to CRM Lead model for detail drawer
+  const [selectedLead, setSelectedLead] = useState(null);
 
   const canExport = hasPermission(PERMISSIONS.ENQUIRIES_EXPORT);
-  const canUpdate = hasPermission(PERMISSIONS.ENQUIRIES_UPDATE);
 
   const fetchEnquiries = useCallback(
     async (targetPage = 1, isManual = false) => {
@@ -65,10 +60,7 @@ export const CustomerEnquiry = () => {
         setTotalRecords(Number(response?.total_records || records.length));
         setPage(targetPage);
       } catch (err) {
-        const msg =
-          err?.message ||
-          err?.response?.data?.message ||
-          "Failed to load customer enquiries.";
+        const msg = getApiErrorMessage(err, "Failed to load customer enquiries.");
         setError(msg);
       } finally {
         setIsLoading(false);
@@ -91,13 +83,25 @@ export const CustomerEnquiry = () => {
     };
   }, [fetchEnquiries]);
 
-  // Enrich raw inquiries with local status state
+  // Merge real backend API data with local CRM repository assignment/metadata
   const enrichedInquiries = useMemo(() => {
-    return inquiries.map((item) => ({
-      ...item,
-      status: localStatuses[item.id] || item.status || "new",
-    }));
-  }, [inquiries, localStatuses]);
+    return inquiries.map((item) => {
+      const matchCrmLead = leads.find(
+        (l) => String(l.id) === String(item.id) || l.phone === (item.mobile || item.phone)
+      );
+
+      return {
+        ...item,
+        status: item.status || matchCrmLead?.status || "new",
+        assigned_name: matchCrmLead?.assigned_name || null,
+        assigned_to: matchCrmLead?.assigned_to || null,
+        state: matchCrmLead?.state || item.state || "Maharashtra",
+        city: matchCrmLead?.city || item.city || "Pune",
+        pipeline_stage: matchCrmLead?.pipeline_stage || "new",
+        priority: matchCrmLead?.priority || "warm",
+      };
+    });
+  }, [inquiries, leads]);
 
   // Reusable data table management
   const {
@@ -112,10 +116,9 @@ export const CustomerEnquiry = () => {
     selectedIds,
     toggleSelect,
     toggleSelectAll,
-    clearSelection,
   } = useDataTable({
     data: enrichedInquiries,
-    searchFields: ["name", "email", "mobile", "message"],
+    searchFields: ["name", "email", "mobile", "message", "city", "state"],
     initialSortBy: "newest",
     statusField: "status",
   });
@@ -142,32 +145,39 @@ export const CustomerEnquiry = () => {
       { key: "name", label: "Customer Name" },
       { key: "email", label: "Customer Email" },
       { key: "mobile", label: "Customer Phone" },
+      { key: "state", label: "State Territory" },
+      { key: "city", label: "City" },
+      { key: "assigned_name", label: "Assigned Sub Admin" },
       { key: "message", label: "Customer Requirement" },
-      { key: "brand_id", label: "Brand Code" },
-      { key: "created_at", label: "Received Date", transform: (val) => formatDate(val) },
       { key: "status", label: "Current Status" },
+      { key: "created_at", label: "Received Date", transform: (val) => formatDate(val) },
     ];
 
     exportToCsv(`customer_enquiries_${brandId || "brand"}`, columns, rowsToExport);
     toast.success(`Exported ${rowsToExport.length} enquiries to CSV.`);
   };
 
-  // Status toggle handler
-  const handleStatusChange = (id, newStatus) => {
-    setLocalStatuses((prev) => ({ ...prev, [id]: newStatus }));
-    setSelectedEnquiry((prev) => (prev?.id === id ? { ...prev, status: newStatus } : prev));
-    toast.success(`Status updated to ${newStatus} (Local session state)`);
-  };
-
-  // Bulk status update
-  const handleBulkStatus = (newStatus) => {
-    const nextStatuses = {};
-    selectedIds.forEach((id) => {
-      nextStatuses[id] = newStatus;
-    });
-    setLocalStatuses((prev) => ({ ...prev, ...nextStatuses }));
-    clearSelection();
-    toast.success(`Updated ${selectedIds.size} records to ${newStatus}.`);
+  const handleOpenLeadDetail = (row) => {
+    const crmLead = {
+      id: row.id,
+      lead_code: `ENQ-${row.id}`,
+      type: "customer_enquiry",
+      customer_name: row.name,
+      contact_person: row.name,
+      phone: row.mobile || row.phone,
+      email: row.email,
+      state: row.state,
+      city: row.city,
+      equipment_interest: row.message?.slice(0, 40) || "General OEM Inquiry",
+      message: row.message,
+      pipeline_stage: row.pipeline_stage,
+      status: row.status,
+      priority: row.priority,
+      assigned_to: row.assigned_to,
+      assigned_name: row.assigned_name,
+      created_at: row.created_at,
+    };
+    setSelectedLead(crmLead);
   };
 
   // Data table column definitions
@@ -175,7 +185,7 @@ export const CustomerEnquiry = () => {
     () => [
       {
         key: "name",
-        label: "Customer",
+        label: "Customer & ID",
         render: (_, row) => (
           <div className="flex items-center gap-3 min-w-0">
             <Avatar name={row.name} size="sm" />
@@ -183,8 +193,8 @@ export const CustomerEnquiry = () => {
               <span className="font-bold text-slate-800 dark:text-slate-100 block truncate">
                 {row.name || "Customer"}
               </span>
-              <span className="text-[11px] text-slate-400 block truncate">
-                #{row.id}
+              <span className="text-[11px] text-orange-600 dark:text-orange-400 font-mono block truncate">
+                #ENQ-{row.id}
               </span>
             </div>
           </div>
@@ -192,7 +202,7 @@ export const CustomerEnquiry = () => {
       },
       {
         key: "contact",
-        label: "Contact",
+        label: "Contact & Location",
         render: (_, row) => (
           <div className="space-y-0.5 min-w-0">
             {row.mobile && (
@@ -205,11 +215,9 @@ export const CustomerEnquiry = () => {
                 <span>{row.mobile}</span>
               </a>
             )}
-            {row.email && (
-              <span className="text-[11px] text-slate-400 block truncate">
-                {row.email}
-              </span>
-            )}
+            <span className="text-[11px] text-slate-400 block truncate">
+              {row.city ? `${row.city}, ` : ""}{row.state}
+            </span>
           </div>
         ),
       },
@@ -220,6 +228,22 @@ export const CustomerEnquiry = () => {
           <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-1 max-w-xs">
             {val || "-"}
           </p>
+        ),
+      },
+      {
+        key: "assigned_name",
+        label: "Lead Owner",
+        render: (val) => (
+          val ? (
+            <span className="font-medium text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              {val}
+            </span>
+          ) : (
+            <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">
+              Unassigned
+            </span>
+          )
         ),
       },
       {
@@ -241,27 +265,40 @@ export const CustomerEnquiry = () => {
         label: "Action",
         align: "right",
         render: (_, row) => (
-          <button
+          <Button
             type="button"
-            onClick={() => setSelectedEnquiry(row)}
-            className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-            title="View details"
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenLeadDetail(row);
+            }}
+            icon={Eye}
           >
-            <Eye className="w-4 h-4" />
-          </button>
+            View
+          </Button>
         ),
       },
     ],
     []
   );
 
+  const tabs = [
+    { value: "all", label: "All Enquiries", count: statusCounts.all || enrichedInquiries.length },
+    { value: "new", label: "New", count: statusCounts.new || 0 },
+    { value: "contacted", label: "Contacted", count: statusCounts.contacted || 0 },
+    { value: "resolved", label: "Resolved", count: statusCounts.resolved || 0 },
+  ];
+
+  const hasActiveFilters = Boolean(searchTerm.trim() || statusFilter !== "all" || sortBy !== "newest");
+
   return (
     <div className="space-y-4">
       {/* Page Header */}
       <PageHeader
         title="Customer Enquiry"
-        subtitle={`Direct buyer product enquiries received for ${brandName}`}
-        breadcrumbs={[{ label: "Operations" }, { label: "Customer Enquiry" }]}
+        subtitle={`Direct buyer product enquiries received for ${brandName} with CRM territory routing`}
+        breadcrumbs={[{ label: "Lead Management" }, { label: "Customer Enquiry" }]}
         actions={
           <div className="flex items-center gap-2">
             {canExport && (
@@ -288,64 +325,39 @@ export const CustomerEnquiry = () => {
         }
       />
 
-      {/* Filter and Search Bar */}
-      <FilterBar
+      {/* Unified TableToolbar */}
+      <TableToolbar
         search={searchTerm}
         onSearchChange={setSearchTerm}
-        searchPlaceholder="Search customer, phone, email, message..."
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        statusCounts={statusCounts}
-        statusOptions={[
-          { value: "all", label: "All Enquiries" },
-          { value: "new", label: "New" },
-          { value: "contacted", label: "Contacted" },
-          { value: "resolved", label: "Resolved" },
+        searchPlaceholder="Search customer, phone, city, requirement..."
+        tabs={tabs}
+        activeTab={statusFilter}
+        onTabChange={setStatusFilter}
+        filters={[
+          {
+            key: "sort",
+            label: "Sort By",
+            placeholder: "Sort by...",
+            value: sortBy,
+            onChange: setSortBy,
+            options: [
+              { value: "newest", label: "Newest First" },
+              { value: "oldest", label: "Oldest First" },
+              { value: "name", label: "Customer Name" },
+            ],
+            isClearable: false,
+            width: "w-40",
+          },
         ]}
-        sortBy={sortBy}
-        onSortByChange={setSortBy}
+        hasActiveFilters={hasActiveFilters}
+        onClear={() => {
+          setSearchTerm("");
+          setStatusFilter("all");
+          setSortBy("newest");
+        }}
       />
 
-      {/* Bulk Selection Bar */}
-      {selectedIds.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900 rounded-xl text-xs text-orange-900 dark:text-orange-200 animate-fade-in">
-          <div className="flex items-center gap-2">
-            <CheckSquare className="w-4 h-4 text-orange-600" />
-            <span className="font-bold">{selectedIds.size} enquiries selected</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {canUpdate && (
-              <>
-                <span className="text-[11px] text-slate-500">Mark as:</span>
-                <button
-                  type="button"
-                  onClick={() => handleBulkStatus("contacted")}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-md bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 transition-colors cursor-pointer"
-                >
-                  Contacted
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleBulkStatus("resolved")}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 transition-colors cursor-pointer"
-                >
-                  Resolved
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={clearSelection}
-              className="px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-200 dark:bg-slate-750 text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition-colors cursor-pointer ml-2"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main Table */}
+      {/* Main DataTable with integrated Pagination */}
       <DataTable
         columns={columns}
         data={filteredData}
@@ -356,147 +368,27 @@ export const CustomerEnquiry = () => {
         selectedIds={selectedIds}
         onSelectRow={toggleSelect}
         onSelectAll={toggleSelectAll}
-        onRowClick={(row) => setSelectedEnquiry(row)}
+        onRowClick={(row) => handleOpenLeadDetail(row)}
         emptyTitle="No customer enquiries found"
         emptyDescription="No enquiries matched your search or filter settings."
+        pagination={
+          !isLoading && !error && totalRecords > 0
+            ? {
+                currentPage: page,
+                totalPages: lastPage,
+                totalRecords: totalRecords,
+                onPageChange: (targetPage) => fetchEnquiries(targetPage),
+              }
+            : null
+        }
       />
 
-      {/* Pagination */}
-      {!isLoading && !error && totalRecords > 0 && (
-        <Pagination
-          currentPage={page}
-          totalPages={lastPage}
-          totalRecords={totalRecords}
-          onPageChange={(targetPage) => fetchEnquiries(targetPage)}
-        />
-      )}
-
-      {/* Detail Drawer */}
-      <Drawer
-        isOpen={Boolean(selectedEnquiry)}
-        onClose={() => setSelectedEnquiry(null)}
-        title={selectedEnquiry?.name || "Customer Enquiry Details"}
-        subtitle={`Enquiry #${selectedEnquiry?.id || ""}`}
-        footer={
-          <div className="flex items-center gap-3">
-            {selectedEnquiry?.mobile && (
-              <a
-                href={getPhoneLink(selectedEnquiry.mobile)}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
-              >
-                <Phone className="w-4 h-4" />
-                <span>Call Customer</span>
-              </a>
-            )}
-            {selectedEnquiry?.email && (
-              <a
-                href={getEmailLink(
-                  selectedEnquiry.email,
-                  `Equipments Dekho Requirement #${selectedEnquiry.id}`
-                )}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg border border-slate-700 shadow-sm transition-colors cursor-pointer"
-              >
-                <Mail className="w-4 h-4" />
-                <span>Send Email</span>
-              </a>
-            )}
-          </div>
-        }
-      >
-        {selectedEnquiry && (
-          <div className="space-y-6">
-            {/* Header info */}
-            <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl">
-              <Avatar name={selectedEnquiry.name} size="lg" />
-              <div className="min-w-0 flex-1">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-                  {selectedEnquiry.name}
-                </h4>
-                <div className="flex items-center gap-2 mt-1">
-                  <StatusBadge status={selectedEnquiry.status || "new"} size="xs" />
-                  <span className="text-[11px] text-slate-400">
-                    ID: #{selectedEnquiry.id}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Details */}
-            <div className="space-y-2">
-              <h5 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                Contact Information
-              </h5>
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 overflow-hidden text-xs">
-                <div className="p-3 flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Phone</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {selectedEnquiry.mobile || "Not provided"}
-                  </span>
-                </div>
-                <div className="p-3 flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Email</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
-                    {selectedEnquiry.email || "Not provided"}
-                  </span>
-                </div>
-                <div className="p-3 flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Brand Code</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 uppercase">
-                    {selectedEnquiry.brand_id || brandId}
-                  </span>
-                </div>
-                <div className="p-3 flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Submitted</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {formatDateTime(selectedEnquiry.created_at)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Requirement Message */}
-            <div className="space-y-2">
-              <h5 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                Requirement Details
-              </h5>
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                {selectedEnquiry.message || "No specific requirement message specified by customer."}
-              </div>
-            </div>
-
-            {/* Status Selector */}
-            {canUpdate && (
-              <div className="space-y-2">
-                <h5 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                  Update Local Status
-                </h5>
-                <div className="grid grid-cols-3 gap-2">
-                  {["new", "contacted", "resolved"].map((st) => (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => handleStatusChange(selectedEnquiry.id, st)}
-                      className={`h-9 text-xs font-semibold rounded-lg border transition-all cursor-pointer capitalize ${
-                        selectedEnquiry.status === st
-                          ? "bg-orange-600 text-white border-orange-600 shadow-xs"
-                          : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400"
-                      }`}
-                    >
-                      {st}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-start gap-1.5 text-[11px] text-slate-400 pt-1">
-                  <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                  <span>
-                    Status changes reflect within your current session. Backend persistence endpoint is currently in development.
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </Drawer>
+      {/* Unified CRM Lead 360 Drawer */}
+      <LeadDetail
+        isOpen={Boolean(selectedLead)}
+        onClose={() => setSelectedLead(null)}
+        lead={selectedLead}
+      />
     </div>
   );
 };

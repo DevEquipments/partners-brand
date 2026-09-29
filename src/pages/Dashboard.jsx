@@ -1,38 +1,43 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Layers,
   MessageSquareText,
-  FileText,
+  FileSpreadsheet,
+  Clock,
+  Inbox,
+  CheckCircle2,
+  XCircle,
   RefreshCw,
   ArrowRight,
-  TrendingUp,
-  Phone,
-  Mail,
   MapPin,
-  Layers,
 } from "lucide-react";
 import { getDashboardData } from "../services/dashboardApi";
 import { useBrand } from "../hooks/useBrand";
 import { usePermissions, PERMISSIONS } from "../hooks/usePermissions";
+import { useAuth } from "../context/AuthContext";
+import { useCRM } from "../context/CRMContext";
 import PageHeader from "../components/common/PageHeader";
 import Button from "../components/common/Button";
-import StatusBadge from "../components/common/StatusBadge";
-import EmptyState from "../components/common/EmptyState";
-import LoadingState from "../components/common/LoadingState";
-import ErrorState from "../components/common/ErrorState";
-import { formatDate } from "../utils/formatters";
+import { CardSkeleton, TableSkeleton } from "../components/common/Skeletons";
+import { getApiErrorMessage } from "../utils/errorHandler";
+import { formatDate } from "../utils/dateUtils";
+import { getLeadStatusBadge } from "../config/crmStatuses";
 
 export const Dashboard = () => {
   const { brandId, brandName } = useBrand();
+  const { role, user } = useAuth();
   const { hasPermission } = usePermissions();
+  const { allLeads, refreshCRM } = useCRM();
   const navigate = useNavigate();
+
+  const isAdmin = role === "ADMIN";
 
   const [dashboardData, setDashboardData] = useState({
     customerQuotesCount: 0,
     featureQuotesCount: 0,
     customerEnquiries: [],
     featureQuotes: [],
-    incomingEnquiries: [],
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -56,15 +61,12 @@ export const Dashboard = () => {
           featureQuotes: Array.isArray(raw.feature_products_enquiry)
             ? raw.feature_products_enquiry
             : [],
-          incomingEnquiries: Array.isArray(raw.incoming_enquiries)
-            ? raw.incoming_enquiries
-            : [],
         });
       } catch (err) {
-        const message =
-          err?.message ||
-          err?.response?.data?.message ||
-          "Could not retrieve dashboard metrics. Please check network connection.";
+        const message = getApiErrorMessage(
+          err,
+          "Could not retrieve dashboard metrics. Please check network connection."
+        );
         setError(message);
       } finally {
         setIsLoading(false);
@@ -87,333 +89,492 @@ export const Dashboard = () => {
     };
   }, [loadData]);
 
-  // Max value for the incoming volume bar chart
-  const maxCount = Math.max(
-    ...dashboardData.incomingEnquiries.map((item) => Number(item.count || 0)),
-    1
-  );
+  // Handle combined manual refresh
+  const handleFullRefresh = async () => {
+    await Promise.all([loadData(true), refreshCRM()]);
+  };
+
+  // Permission checks
+  const canViewQuotes = hasPermission(PERMISSIONS.QUOTES_VIEW);
+
+  // Filtered operational lists based on role
+  const relevantLeads = useMemo(() => {
+    if (isAdmin) return allLeads;
+    return allLeads.filter((l) => String(l.assigned_to) === String(user?.id));
+  }, [isAdmin, allLeads, user]);
+
+  const newLeadsCount = useMemo(() => {
+    return relevantLeads.filter((l) => (l.status || l.pipeline_stage || "new") === "new").length;
+  }, [relevantLeads]);
+
+  const enquiriesCount = useMemo(() => {
+    if (isAdmin) {
+      return dashboardData.customerQuotesCount || allLeads.filter((l) => l.type === "customer_enquiry").length;
+    }
+    return relevantLeads.filter((l) => l.type === "customer_enquiry").length;
+  }, [isAdmin, dashboardData, allLeads, relevantLeads]);
+
+  const quotesCount = useMemo(() => {
+    if (isAdmin) {
+      return dashboardData.featureQuotesCount || allLeads.filter((l) => l.type === "equipment_quote").length;
+    }
+    return relevantLeads.filter((l) => l.type === "equipment_quote").length;
+  }, [isAdmin, dashboardData, allLeads, relevantLeads]);
+
+  const unassignedCount = useMemo(() => {
+    return allLeads.filter((l) => !l.assigned_to).length;
+  }, [allLeads]);
+
+  const followupsDueCount = useMemo(() => {
+    return relevantLeads.filter((l) => l.next_followup_at).length;
+  }, [relevantLeads]);
+
+  const wonCount = useMemo(() => {
+    return relevantLeads.filter((l) => (l.status || l.pipeline_stage) === "won").length;
+  }, [relevantLeads]);
+
+  const lostCount = useMemo(() => {
+    return relevantLeads.filter((l) => (l.status || l.pipeline_stage) === "lost").length;
+  }, [relevantLeads]);
+
+  // Today's Follow-ups
+  const todayFollowups = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return relevantLeads
+      .filter((l) => l.next_followup_at && l.next_followup_at.slice(0, 10) <= todayStr)
+      .slice(0, 6);
+  }, [relevantLeads]);
+
+  // Recent Leads
+  const recentLeads = useMemo(() => {
+    return [...relevantLeads]
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+      .slice(0, 5);
+  }, [relevantLeads]);
+
+  // Recent Enquiries (Backend + Local CRM)
+  const recentEnquiries = useMemo(() => {
+    if (dashboardData.customerEnquiries.length > 0) {
+      return dashboardData.customerEnquiries.slice(0, 5);
+    }
+    return relevantLeads.filter((l) => l.type === "customer_enquiry").slice(0, 5);
+  }, [dashboardData.customerEnquiries, relevantLeads]);
+
+  // Recent Quotes (Backend + Local CRM)
+  const recentQuotes = useMemo(() => {
+    if (dashboardData.featureQuotes.length > 0) {
+      return dashboardData.featureQuotes.slice(0, 5);
+    }
+    return relevantLeads.filter((l) => l.type === "equipment_quote").slice(0, 5);
+  }, [dashboardData.featureQuotes, relevantLeads]);
 
   return (
-    <div className="space-y-6">
-      {/* Enterprise Operations Header */}
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <PageHeader
-        title="Operations Dashboard"
-        subtitle={`Real-time equipment inquiry feed & quotation overview for ${brandName}`}
-        breadcrumbs={[{ label: "Operations" }, { label: "Dashboard" }]}
+        title={isAdmin ? "Operations Dashboard" : "My Operations Dashboard"}
+        subtitle={
+          isAdmin
+            ? `Commercial management and lead operations workspace for ${brandName}`
+            : `Assigned leads, quotes, and customer follow-ups for ${user?.name || "Operator"}`
+        }
+        breadcrumbs={[{ label: "Overview" }, { label: "Dashboard" }]}
         actions={
           <Button
             variant="outline"
             size="sm"
             icon={RefreshCw}
             isLoading={isRefreshing}
-            onClick={() => loadData(true)}
+            onClick={handleFullRefresh}
           >
-            Refresh Feed
+            Refresh
           </Button>
         }
       />
 
-      {error ? (
-        <ErrorState
-          title="Dashboard Unavailable"
-          message={error}
-          onRetry={() => loadData(false)}
-        />
-      ) : isLoading ? (
-        <div className="py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs">
-          <LoadingState text="Loading real-time brand operations metrics..." />
+      {error && (
+        <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-xs text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-6">
+          <CardSkeleton count={isAdmin ? 7 : 5} />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-xs">
+            <TableSkeleton rows={5} cols={5} />
+          </div>
         </div>
       ) : (
         <>
-          {/* Top Enterprise Metric Strip (Dense, High-Contrast) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {hasPermission(PERMISSIONS.ENQUIRIES_VIEW) && (
-              <div
-                onClick={() => navigate("/inquiries")}
-                className="group relative p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-500/60 dark:hover:border-orange-500/60 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-orange-500/10 border border-orange-200 dark:border-orange-900/60 flex items-center justify-center text-orange-600 dark:text-orange-400">
-                      <MessageSquareText className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                      Customer Enquiries
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-orange-600 dark:text-orange-400 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span>Manage</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </span>
+          {/* Summary Strip (Admin: 7 Cards, Sub Admin: 5/6 Cards) */}
+          <div
+            className={`grid grid-cols-2 sm:grid-cols-3 ${
+              isAdmin ? "lg:grid-cols-7" : canViewQuotes ? "lg:grid-cols-6" : "lg:grid-cols-5"
+            } gap-3`}
+          >
+            {/* Card: Leads / New Leads */}
+            <div
+              onClick={() => navigate("/crm/leads")}
+              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-500/60 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  {isAdmin ? "New Leads" : "My Leads"}
+                </span>
+                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600">
+                  <Layers className="w-3.5 h-3.5" />
                 </div>
+              </div>
+              <div className="mt-2 flex items-baseline justify-between">
+                <span className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  {isAdmin ? newLeadsCount : relevantLeads.length}
+                </span>
+                <ArrowRight className="w-3 h-3 text-slate-400" />
+              </div>
+            </div>
 
-                <div className="mt-4 flex items-baseline justify-between">
-                  <div className="text-3xl font-black text-slate-950 dark:text-white tracking-tight">
-                    {dashboardData.customerQuotesCount.toLocaleString("en-IN")}
-                  </div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Total recorded
+            {/* Card: Enquiries */}
+            <div
+              onClick={() => navigate("/crm/enquiries")}
+              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-500/60 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  {isAdmin ? "Enquiries" : "My Enquiries"}
+                </span>
+                <div className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                  <MessageSquareText className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline justify-between">
+                <span className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  {enquiriesCount}
+                </span>
+                <ArrowRight className="w-3 h-3 text-slate-400" />
+              </div>
+            </div>
+
+            {/* Card: Quotes (Permission gated for Sub Admin) */}
+            {(isAdmin || canViewQuotes) && (
+              <div
+                onClick={() => navigate("/crm/quotes")}
+                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-500/60 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                    {isAdmin ? "Quotes" : "My Quotes"}
                   </span>
+                  <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600">
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline justify-between">
+                  <span className="text-xl font-extrabold text-slate-900 dark:text-white">
+                    {quotesCount}
+                  </span>
+                  <ArrowRight className="w-3 h-3 text-slate-400" />
                 </div>
               </div>
             )}
 
-            {hasPermission(PERMISSIONS.QUOTES_VIEW) && (
-              <div
-                onClick={() => navigate("/product-quotes")}
-                className="group relative p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-500/60 dark:hover:border-blue-500/60 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-200 dark:border-blue-900/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                      Feature Equipment Quotes
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span>Manage</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </span>
+            {/* Card: Follow-ups Due */}
+            <div
+              onClick={() => navigate("/crm/follow-ups")}
+              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-500/60 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  Follow-ups
+                </span>
+                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
+                  <Clock className="w-3.5 h-3.5" />
                 </div>
+              </div>
+              <div className="mt-2 flex items-baseline justify-between">
+                <span className="text-xl font-extrabold text-amber-600 dark:text-amber-400">
+                  {followupsDueCount}
+                </span>
+                <ArrowRight className="w-3 h-3 text-slate-400" />
+              </div>
+            </div>
 
-                <div className="mt-4 flex items-baseline justify-between">
-                  <div className="text-3xl font-black text-slate-950 dark:text-white tracking-tight">
-                    {dashboardData.featureQuotesCount.toLocaleString("en-IN")}
-                  </div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Direct RFQs
+            {/* Card: Unassigned (Admin Only) */}
+            {isAdmin && (
+              <div
+                onClick={() => navigate("/crm/leads")}
+                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-500/60 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                    Unassigned
                   </span>
+                  <div className="p-1.5 rounded-lg bg-red-500/10 text-red-600">
+                    <Inbox className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline justify-between">
+                  <span className="text-xl font-extrabold text-red-600 dark:text-red-400">
+                    {unassignedCount}
+                  </span>
+                  <ArrowRight className="w-3 h-3 text-slate-400" />
                 </div>
               </div>
             )}
 
-            {/* Operational Channel Summary */}
-            <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/60 shadow-xs flex flex-col justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300">
-                  <Layers className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider block">
-                    Brand Operations Gateway
-                  </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Direct OEM Connection
-                  </span>
+            {/* Card: Won */}
+            <div
+              onClick={() => navigate("/crm/leads")}
+              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  Deals Won
+                </span>
+                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                 </div>
               </div>
+              <div className="mt-2 flex items-baseline justify-between">
+                <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                  {wonCount}
+                </span>
+                <ArrowRight className="w-3 h-3 text-slate-400" />
+              </div>
+            </div>
 
-              <div className="mt-4 flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-slate-400 font-medium">
-                  Active Brand ID:
+            {/* Card: Lost */}
+            <div
+              onClick={() => navigate("/crm/leads")}
+              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-400 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  Deals Lost
                 </span>
-                <span className="font-mono font-bold uppercase text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                  {brandId || "N/A"}
+                <div className="p-1.5 rounded-lg bg-slate-500/10 text-slate-500">
+                  <XCircle className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline justify-between">
+                <span className="text-xl font-extrabold text-slate-600 dark:text-slate-400">
+                  {lostCount}
                 </span>
+                <ArrowRight className="w-3 h-3 text-slate-400" />
               </div>
             </div>
           </div>
 
-          {/* Activity Velocity Chart (Strictly Real Data) */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
-              <div>
+          {/* Operational Tables Grid (2 Columns) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Table 1: Recent Leads / My Recent Leads */}
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-orange-600" />
+                  <Layers className="w-4 h-4 text-orange-600" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                    Incoming Enquiries Velocity
+                    {isAdmin ? "Recent Leads" : "My Recent Leads"}
                   </h3>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Aggregated inquiry distribution received from customer touchpoints
-                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/crm/leads")}
+                  className="text-[11px] font-semibold text-orange-600 hover:underline cursor-pointer"
+                >
+                  View All →
+                </button>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                <span className="w-2 h-2 rounded-full bg-orange-600" />
-                <span>Verified Volume</span>
-              </div>
-            </div>
-
-            {dashboardData.incomingEnquiries.length === 0 ? (
-              <EmptyState
-                icon={TrendingUp}
-                title="No enquiry activity available"
-                description="Daily inquiry activity trends will automatically render here as customer requirements arrive."
-              />
-            ) : (
-              <div className="pt-4 pb-2">
-                <div className="flex items-end justify-between gap-3 sm:gap-6 h-44 border-b border-slate-200 dark:border-slate-800 pb-2">
-                  {dashboardData.incomingEnquiries.map((item, index) => {
-                    const count = Number(item.count || 0);
-                    const percentage = Math.max((count / maxCount) * 100, 5);
-
+              {recentLeads.length === 0 ? (
+                <p className="text-xs text-slate-400 py-6 text-center">No leads available.</p>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                  {recentLeads.map((lead) => {
+                    const statusBadge = getLeadStatusBadge(lead.status || lead.pipeline_stage);
                     return (
                       <div
-                        key={index}
-                        className="flex-1 flex flex-col items-center justify-end h-full group"
+                        key={lead.id}
+                        onClick={() => navigate("/crm/leads")}
+                        className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
                       >
-                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {count}
-                        </span>
-                        <div
-                          className="w-full max-w-[32px] bg-orange-600 hover:bg-orange-500 rounded-t transition-all duration-200 shadow-2xs"
-                          style={{ height: `${percentage}%` }}
-                        />
-                        <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-2 truncate w-full text-center">
-                          {item.day || `Day ${index + 1}`}
-                        </span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900 dark:text-white truncate">
+                              {lead.customer_name}
+                            </span>
+                            <span className="font-mono text-[10px] text-orange-600 dark:text-orange-400">
+                              {lead.lead_code || lead.id}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                            <span className="truncate">{lead.equipment_interest || "Machinery"}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-0.5">
+                              <MapPin className="w-3 h-3" />
+                              {lead.city || lead.state || "India"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.2 rounded text-[10px] font-bold uppercase border ${statusBadge.badgeClass}`}
+                          >
+                            {statusBadge.label}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block mt-1">
+                            {formatDate(lead.created_at)}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Real Recent Records Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Customer Enquiries Queue */}
-            {hasPermission(PERMISSIONS.ENQUIRIES_VIEW) && (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs flex flex-col">
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60">
-                  <div className="flex items-center gap-2">
-                    <MessageSquareText className="w-4 h-4 text-orange-600" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Recent Customer Enquiries
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/inquiries")}
-                    className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>View All</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+            {/* Table 2: Follow-ups Due Today */}
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-600" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                    {isAdmin ? "Pending Follow-ups" : "Today's Follow-ups"}
+                  </h3>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("/crm/follow-ups")}
+                  className="text-[11px] font-semibold text-orange-600 hover:underline cursor-pointer"
+                >
+                  View All →
+                </button>
+              </div>
 
-                <div className="flex-1 divide-y divide-slate-100 dark:divide-slate-800">
-                  {dashboardData.customerEnquiries.length === 0 ? (
-                    <EmptyState
-                      icon={MessageSquareText}
-                      title="No customer enquiries yet"
-                      description="Inbound requirements submitted on your equipment models will appear here in real-time."
-                    />
-                  ) : (
-                    dashboardData.customerEnquiries.slice(0, 5).map((enquiry) => (
-                      <div
-                        key={enquiry.id}
-                        onClick={() => navigate("/inquiries")}
-                        className="p-4 hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition-colors cursor-pointer flex items-start justify-between gap-3"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                              {enquiry.name || "Customer Lead"}
-                            </span>
-                            <StatusBadge status="new" size="xs" />
-                          </div>
+              {todayFollowups.length === 0 ? (
+                <p className="text-xs text-slate-400 py-6 text-center">
+                  No overdue or scheduled follow-ups for today.
+                </p>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                  {todayFollowups.map((lead) => (
+                    <div
+                      key={lead.id}
+                      onClick={() => navigate("/crm/follow-ups")}
+                      className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <span className="font-semibold text-slate-900 dark:text-white block truncate">
+                          {lead.customer_name}
+                        </span>
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5 truncate">
+                          {lead.next_followup_notes || "Customer follow-up"}
+                        </p>
+                      </div>
 
-                          <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-1 mt-1 font-normal">
-                            {enquiry.message || "Customer request submitted via portal."}
-                          </p>
-
-                          <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                            {enquiry.mobile && (
-                              <span className="flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-slate-400" />
-                                <span>{enquiry.mobile}</span>
-                              </span>
-                            )}
-                            {enquiry.email && (
-                              <span className="flex items-center gap-1 truncate max-w-[180px]">
-                                <Mail className="w-3 h-3 text-slate-400" />
-                                <span className="truncate">{enquiry.email}</span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
-                          {formatDate(enquiry.created_at)}
+                      <div className="text-right shrink-0">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 block text-[11px]">
+                          {formatDate(lead.next_followup_at)}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          {lead.assigned_name ? `@${lead.assigned_name}` : "Unassigned"}
                         </span>
                       </div>
-                    ))
-                  )}
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Feature Equipment Quotes Queue */}
-            {hasPermission(PERMISSIONS.QUOTES_VIEW) && (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs flex flex-col">
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60">
+            {/* Table 3: Recent Customer Enquiries */}
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <MessageSquareText className="w-4 h-4 text-orange-600" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                    {isAdmin ? "Recent Customer Enquiries" : "My Recent Enquiries"}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("/crm/enquiries")}
+                  className="text-[11px] font-semibold text-orange-600 hover:underline cursor-pointer"
+                >
+                  View All →
+                </button>
+              </div>
+
+              {recentEnquiries.length === 0 ? (
+                <p className="text-xs text-slate-400 py-6 text-center">No enquiries found.</p>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                  {recentEnquiries.map((enq, idx) => (
+                    <div
+                      key={enq.id || idx}
+                      onClick={() => navigate("/crm/enquiries")}
+                      className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <span className="font-semibold text-slate-900 dark:text-white block truncate">
+                          {enq.name || enq.customer_name || "Customer Inquiry"}
+                        </span>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                          {enq.email || enq.phone || enq.city || "Direct Inquiry"}
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-slate-400 shrink-0">
+                        {formatDate(enq.created_at)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Table 4: Recent Equipment Quotes (Only if permitted) */}
+            {(isAdmin || canViewQuotes) && (
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-blue-600" />
+                    <FileSpreadsheet className="w-4 h-4 text-purple-600" />
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Recent Feature Equipment Quotes
+                      {isAdmin ? "Recent Equipment Quotes" : "My Recent Quotes"}
                     </h3>
                   </div>
                   <button
                     type="button"
-                    onClick={() => navigate("/product-quotes")}
-                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    onClick={() => navigate("/crm/quotes")}
+                    className="text-[11px] font-semibold text-orange-600 hover:underline cursor-pointer"
                   >
-                    <span>View All</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    View All →
                   </button>
                 </div>
 
-                <div className="flex-1 divide-y divide-slate-100 dark:divide-slate-800">
-                  {dashboardData.featureQuotes.length === 0 ? (
-                    <EmptyState
-                      icon={FileText}
-                      title="No feature equipment quotes yet"
-                      description="Direct quotation requests generated from featured equipment showcases will appear here."
-                    />
-                  ) : (
-                    dashboardData.featureQuotes.slice(0, 5).map((quote) => (
+                {recentQuotes.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-6 text-center">No quotes available.</p>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                    {recentQuotes.map((quote, idx) => (
                       <div
-                        key={quote.id}
-                        onClick={() => navigate("/product-quotes")}
-                        className="p-4 hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition-colors cursor-pointer flex items-start justify-between gap-3"
+                        key={quote.id || idx}
+                        onClick={() => navigate("/crm/quotes")}
+                        className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                              {quote.full_name || quote.name || "Commercial Buyer"}
-                            </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 truncate">
-                              {quote.model_name || "Heavy Machinery"}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                            {quote.location && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3 text-slate-400" />
-                                <span>{quote.location}</span>
-                              </span>
-                            )}
-                            {quote.phone_no && (
-                              <span className="flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-slate-400" />
-                                <span>{quote.phone_no}</span>
-                              </span>
-                            )}
-                          </div>
+                        <div className="min-w-0">
+                          <span className="font-semibold text-slate-900 dark:text-white block truncate">
+                            {quote.name || quote.customer_name || quote.contact_person || "Equipment Quote"}
+                          </span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            {quote.product_name || quote.model_name || quote.equipment_interest || "Machinery Quote"}
+                          </p>
                         </div>
-
-                        <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
+                        <span className="text-[10px] text-slate-400 shrink-0">
                           {formatDate(quote.created_at)}
                         </span>
                       </div>
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

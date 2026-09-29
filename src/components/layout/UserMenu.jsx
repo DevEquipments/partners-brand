@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, LogOut, ChevronDown, FlaskConical } from "lucide-react";
+import { User, LogOut, ChevronDown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useBrand } from "../../hooks/useBrand";
 import Avatar from "../common/Avatar";
@@ -8,15 +8,7 @@ import Avatar from "../common/Avatar";
 export const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
-  const {
-    user,
-    role,
-    logout,
-    isDummyEnabled,
-    isDummySession,
-    switchToDummySubAdmin,
-    restoreAdminSession,
-  } = useAuth();
+  const { user, role, logout } = useAuth();
   const { brandName } = useBrand();
   const navigate = useNavigate();
 
@@ -82,24 +74,6 @@ export const UserMenu = () => {
               <User className="w-4 h-4 text-slate-400" />
               <span>Partner Profile</span>
             </Link>
-
-            {isDummyEnabled && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOpen(false);
-                  if (isDummySession) {
-                    restoreAdminSession();
-                  } else {
-                    switchToDummySubAdmin();
-                  }
-                }}
-                className="flex items-center gap-2.5 w-full px-4 py-2 text-xs font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors cursor-pointer text-left"
-              >
-                <FlaskConical className="w-4 h-4 text-amber-500" />
-                <span>{isDummySession ? "Exit Test Sub Admin" : "Test Sub Admin Session"}</span>
-              </button>
-            )}
           </div>
 
           <div className="border-t border-slate-100 dark:border-slate-800 pt-1">

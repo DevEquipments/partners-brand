@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { getProfile, logoutUser as apiLogout } from "../services/authApi";
+import { ROLES, normalizeUserType, isValidRole } from "../utils/roleUtils";
 import toast from "react-hot-toast";
 
 const AuthContext = createContext(null);
@@ -14,60 +15,91 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem("token") || null);
+
+  // Restore stored session and validate normalized role
   const [user, setUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem("user");
-      return savedUser ? JSON.parse(savedUser) : null;
+      if (!savedUser) return null;
+      const parsed = JSON.parse(savedUser);
+      if (!parsed || typeof parsed !== "object") return null;
+
+      // Validate that stored session contains a recognized role/user_type
+      const normalizedRole = normalizeUserType(parsed.user_type || parsed.role);
+      if (!normalizedRole) {
+        // Unknown or missing role: prevent unauthorized access
+        localStorage.removeItem("user");
+        return null;
+      }
+
+      return {
+        ...parsed,
+        role: normalizedRole,
+        user_type: parsed.user_type || (normalizedRole === ROLES.ADMIN ? "admin" : "sub_admin"),
+      };
     } catch {
+      localStorage.removeItem("user");
       return null;
     }
   });
+
+  // Loading state prevents layout and protected route flash
   const [loading, setLoading] = useState(() => Boolean(localStorage.getItem("token")));
 
-  // Role detection: Exactly TWO user types: ADMIN and SUB_ADMIN
+  // Canonical normalized role: strictly ADMIN | SUB_ADMIN | null
   const role = useMemo(() => {
-    const rawRole = String(user?.role || user?.user_type || "").toUpperCase().trim();
-    if (rawRole.includes("SUB")) {
-      return "SUB_ADMIN";
-    }
-    return "ADMIN";
+    return normalizeUserType(user?.user_type || user?.role);
   }, [user]);
 
+  const isAdmin = role === ROLES.ADMIN;
+  const isSubAdmin = role === ROLES.SUB_ADMIN;
+  const isAuthenticated = Boolean(token && role && isValidRole(role));
+
+  // Merge profile response safely without wiping backend user_type or role
   const fetchProfile = useCallback(async () => {
+    if (!token) return null;
+
     try {
       const response = await getProfile();
-      const profileData = response.data || response.user || response;
+      const profileData = response?.data || response?.user || response;
+
       if (profileData && typeof profileData === "object") {
-        setUser(profileData);
-        localStorage.setItem("user", JSON.stringify(profileData));
+        setUser((prev) => {
+          const rawType = profileData.user_type || prev?.user_type;
+          const assignedRole = normalizeUserType(rawType || profileData.role || prev?.role);
+
+          const merged = {
+            ...(prev || {}),
+            ...profileData,
+            user_type: rawType || (assignedRole === ROLES.ADMIN ? "admin" : "sub_admin"),
+            role: assignedRole,
+          };
+
+          try {
+            localStorage.setItem("user", JSON.stringify(merged));
+          } catch {
+            // Storage quota handled safely
+          }
+          return merged;
+        });
         return profileData;
       }
     } catch {
-      // If profile fetch fails on a 401, axios interceptor handles redirect
+      // 401 is handled by axios interceptor
     }
     return null;
-  }, []);
+  }, [token]);
 
-  const isDummyEnabled = import.meta.env.VITE_ENABLE_DUMMY_SUB_ADMIN === "true";
-  const [isDummySession, setIsDummySession] = useState(
-    () => isDummyEnabled && sessionStorage.getItem("is_dummy_sub_admin") === "true"
-  );
-
-  // Fetch fresh profile on mount if token exists and not in dummy test mode
+  // Validate session on mount if token exists
   useEffect(() => {
-    if (!token || isDummySession) return;
+    if (!token) return;
 
     let isMounted = true;
-    const loadProfile = async () => {
+    const initSession = async () => {
       try {
-        const response = await getProfile();
-        const profileData = response.data || response.user || response;
-        if (isMounted && profileData && typeof profileData === "object") {
-          setUser(profileData);
-          localStorage.setItem("user", JSON.stringify(profileData));
-        }
+        await fetchProfile();
       } catch {
-        // If profile fetch fails on a 401, axios interceptor handles redirect
+        // Interceptor handles session expiry
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -75,113 +107,79 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    loadProfile();
+    initSession();
 
     return () => {
       isMounted = false;
     };
-  }, [token, isDummySession]);
+  }, [token, fetchProfile]);
 
-  const login = useCallback((newToken, userData) => {
-    sessionStorage.removeItem("is_dummy_sub_admin");
-    setIsDummySession(false);
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
-    if (userData) {
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    try {
-      if (!isDummySession) {
-        await apiLogout();
-      }
-      toast.success("Logged out successfully");
-    } catch {
-      // Even if backend logout fails, clear local session
-    } finally {
-      sessionStorage.removeItem("is_dummy_sub_admin");
-      sessionStorage.removeItem("real_user_backup");
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      setIsDummySession(false);
-      setToken(null);
-      setUser(null);
-    }
-  }, [isDummySession]);
-
-  // Frontend-only Dummy Sub Admin toggle for testing role-based UI and permissions
-  const switchToDummySubAdmin = useCallback(() => {
-    if (!isDummyEnabled) return;
-
-    // Backup real user in session storage if available
-    const currentUser = localStorage.getItem("user");
-    if (currentUser) {
-      sessionStorage.setItem("real_user_backup", currentUser);
+  /**
+   * Complete login handler
+   *
+   * Accepts:
+   * - newToken: string
+   * - userData: object ({ id, brand_id, brand_name, username, ... })
+   * - explicitUserType: optional string ("admin" | "sub_admin")
+   */
+  const login = useCallback((newToken, userData = {}, explicitUserType = null) => {
+    if (!newToken) {
+      throw new Error("Authentication token is required.");
     }
 
-    const DUMMY_SUB_ADMIN = {
-      id: "frontend-test-sub-admin",
-      name: "Test Sub Admin",
-      username: "subadmin_test",
-      email: "subadmin.test@equipmentsdekho.local",
-      role: "SUB_ADMIN",
-      user_type: "SUB_ADMIN",
-      brand_id: user?.brand_id || user?.brand_slug || "frontend-test-brand",
-      brand_name: user?.brand_name || "Partner Brand",
-      permissions: [
-        "dashboard:view",
-        "enquiries:view",
-        "enquiries:export",
-        "quotes:view",
-        "profile:view",
-      ],
+    const candidateType = explicitUserType || userData?.user_type || userData?.role;
+    const normalizedRole = normalizeUserType(candidateType);
+
+    if (!normalizedRole) {
+      throw new Error("Unable to authenticate: missing or unsupported account role.");
+    }
+
+    const canonicalUser = {
+      ...(userData || {}),
+      user_type: candidateType ? String(candidateType).trim().toLowerCase() : (normalizedRole === ROLES.ADMIN ? "admin" : "sub_admin"),
+      role: normalizedRole,
     };
 
-    sessionStorage.setItem("is_dummy_sub_admin", "true");
-    setIsDummySession(true);
-    setUser(DUMMY_SUB_ADMIN);
-    // If not logged in, set a synthetic development token to allow inspecting protected routes
-    if (!token) {
-      setToken("dev-dummy-token");
-    }
-    toast.success("Active test session: Dummy Sub Admin mode enabled");
-  }, [isDummyEnabled, user, token]);
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("user", JSON.stringify(canonicalUser));
 
-  const restoreAdminSession = useCallback(async () => {
-    sessionStorage.removeItem("is_dummy_sub_admin");
-    setIsDummySession(false);
-    const backup = sessionStorage.getItem("real_user_backup");
-    if (backup) {
+    setToken(newToken);
+    setUser(canonicalUser);
+    setLoading(false);
+  }, []);
+
+  /**
+   * Complete logout handler
+   * Clears API session, localStorage, and resets auth state
+   */
+  const logout = useCallback(async () => {
+    try {
+      await apiLogout();
+      toast.success("Logged out successfully");
+    } catch {
+      // Clear local session even if server logout request fails
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       try {
-        const parsed = JSON.parse(backup);
-        setUser(parsed);
-        localStorage.setItem("user", backup);
+        sessionStorage.clear();
       } catch {
-        // Fallback
+        // Safari private mode safe
       }
-      sessionStorage.removeItem("real_user_backup");
-    } else {
-      await fetchProfile();
-    }
-    if (token === "dev-dummy-token") {
       setToken(null);
+      setUser(null);
+      setLoading(false);
     }
-    toast.success("Restored Admin session");
-  }, [fetchProfile, token]);
+  }, []);
 
   const value = {
     user,
     token,
     role,
+    isAdmin,
+    isSubAdmin,
     loading,
-    isAuthenticated: Boolean(token),
-    isDummyEnabled,
-    isDummySession,
-    switchToDummySubAdmin,
-    restoreAdminSession,
+    isAuthenticated,
     login,
     logout,
     fetchProfile,

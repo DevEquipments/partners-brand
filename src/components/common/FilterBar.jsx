@@ -1,5 +1,5 @@
 import SearchInput from "./SearchInput";
-import Select from "./Select";
+import SearchableSelect from "./SearchableSelect";
 
 export const FilterBar = ({
   search = "",
@@ -75,11 +75,13 @@ export const FilterBar = ({
       {/* Right side: Sort and Action slot */}
       <div className="flex items-center gap-2.5 self-end md:self-auto">
         {sortOptions && sortOptions.length > 0 && (
-          <div className="w-36">
-            <Select
+          <div className="w-44">
+            <SearchableSelect
               value={sortBy}
-              onChange={(e) => onSortByChange?.(e.target.value)}
+              onChange={(val) => onSortByChange?.(val)}
               options={sortOptions}
+              isClearable={false}
+              placeholder="Sort by..."
             />
           </div>
         )}

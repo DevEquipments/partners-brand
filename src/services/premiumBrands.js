@@ -3,7 +3,7 @@ import { apiRequest } from "../api/apiRequest";
 
 export const getPremiumBrandsList = (brand) =>
     apiRequest({
-        ...API_ENDPOINTS.endPointPremiumBrandsList,
+        ...API_ENDPOINTS.getPremiumBrandsList,
         data: brand,
         headers: {
             "Content-Type": "multipart/form-data",

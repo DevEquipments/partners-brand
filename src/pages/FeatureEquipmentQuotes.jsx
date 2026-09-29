@@ -3,35 +3,34 @@ import {
   Download,
   RefreshCw,
   Phone,
-  Mail,
-  MessageCircle,
   Eye,
   MapPin,
-  Info,
 } from "lucide-react";
 import { getProductQuotations } from "../services/productQuotation";
 import { useAuth } from "../context/AuthContext";
 import { useBrand } from "../hooks/useBrand";
 import { useDataTable } from "../hooks/useDataTable";
 import { usePermissions, PERMISSIONS } from "../hooks/usePermissions";
+import { useCRM } from "../context/CRMContext";
 import PageHeader from "../components/common/PageHeader";
-import FilterBar from "../components/common/FilterBar";
+import TableToolbar from "../components/common/TableToolbar";
 import DataTable from "../components/common/DataTable";
-import Pagination from "../components/common/Pagination";
-import Drawer from "../components/common/Drawer";
+import LeadDetail from "../components/crm/LeadDetail";
 import StatusBadge from "../components/common/StatusBadge";
 import PriorityBadge from "../components/common/PriorityBadge";
 import Button from "../components/common/Button";
 import Avatar from "../components/common/Avatar";
-import { formatDate, formatDateTime, formatRole } from "../utils/formatters";
-import { getPhoneLink, getEmailLink, getWhatsAppLink } from "../utils/contactLinks";
+import { formatDate, formatRole } from "../utils/formatters";
+import { getPhoneLink } from "../utils/contactLinks";
 import { exportToCsv } from "../utils/exportCsv";
+import { getApiErrorMessage } from "../utils/errorHandler";
 import toast from "react-hot-toast";
 
 export const FeatureEquipmentQuotes = () => {
   const { token } = useAuth();
   const { brandId, brandName } = useBrand();
   const { hasPermission } = usePermissions();
+  const { leads } = useCRM();
 
   const [quotes, setQuotes] = useState([]);
   const [page, setPage] = useState(1);
@@ -41,14 +40,10 @@ export const FeatureEquipmentQuotes = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  // Selected quote for drawer
-  const [selectedQuote, setSelectedQuote] = useState(null);
-
-  // Local priority & status state
-  const [localData, setLocalData] = useState({});
+  // Selected quote mapped to CRM Lead structure for drawer
+  const [selectedLead, setSelectedLead] = useState(null);
 
   const canExport = hasPermission(PERMISSIONS.QUOTES_EXPORT);
-  const canUpdate = hasPermission(PERMISSIONS.QUOTES_UPDATE);
 
   const fetchQuotes = useCallback(
     async (targetPage = 1, isManual = false) => {
@@ -70,10 +65,7 @@ export const FeatureEquipmentQuotes = () => {
         setTotalRecords(Number(response?.total_records || records.length));
         setPage(targetPage);
       } catch (err) {
-        const msg =
-          err?.message ||
-          err?.response?.data?.message ||
-          "Failed to load equipment quotation requests.";
+        const msg = getApiErrorMessage(err, "Failed to load equipment quotation requests.");
         setError(msg);
       } finally {
         setIsLoading(false);
@@ -96,17 +88,25 @@ export const FeatureEquipmentQuotes = () => {
     };
   }, [fetchQuotes]);
 
-  // Enrich raw quotes with local status & priority
+  // Enrich raw quotes with CRM Lead repository ownership & metadata
   const enrichedQuotes = useMemo(() => {
     return quotes.map((item) => {
-      const overrides = localData[item.id] || {};
+      const matchCrmLead = leads.find(
+        (l) => String(l.id) === String(item.id) || l.phone === (item.phone_no || item.phone)
+      );
+
       return {
         ...item,
-        status: overrides.status || item.status || "new",
-        priority: overrides.priority || item.priority || "medium",
+        status: item.status || matchCrmLead?.status || "new",
+        priority: item.priority || matchCrmLead?.priority || "medium",
+        assigned_name: matchCrmLead?.assigned_name || null,
+        assigned_to: matchCrmLead?.assigned_to || null,
+        state: matchCrmLead?.state || item.state || "Maharashtra",
+        city: matchCrmLead?.city || item.location || "Mumbai",
+        pipeline_stage: matchCrmLead?.pipeline_stage || "new",
       };
     });
-  }, [quotes, localData]);
+  }, [quotes, leads]);
 
   // Reusable data table management
   const {
@@ -123,7 +123,7 @@ export const FeatureEquipmentQuotes = () => {
     toggleSelectAll,
   } = useDataTable({
     data: enrichedQuotes,
-    searchFields: ["full_name", "email", "phone_no", "model_name", "location", "brand_name"],
+    searchFields: ["full_name", "email", "phone_no", "model_name", "location", "brand_name", "city", "state"],
     initialSortBy: "newest",
     statusField: "status",
   });
@@ -150,10 +150,10 @@ export const FeatureEquipmentQuotes = () => {
       { key: "full_name", label: "Customer Name" },
       { key: "email", label: "Email" },
       { key: "phone_no", label: "Phone" },
-      { key: "product_id", label: "Product ID" },
-      { key: "brand_name", label: "Brand" },
       { key: "model_name", label: "Equipment Model" },
-      { key: "location", label: "Location" },
+      { key: "state", label: "Territory State" },
+      { key: "city", label: "City" },
+      { key: "assigned_name", label: "Lead Owner" },
       { key: "role", label: "Customer Role", transform: (val) => formatRole(val) },
       { key: "status", label: "Status" },
       { key: "priority", label: "Priority" },
@@ -164,14 +164,29 @@ export const FeatureEquipmentQuotes = () => {
     toast.success(`Exported ${rowsToExport.length} quotes to CSV.`);
   };
 
-  // Local state update
-  const handleUpdateRecord = (id, changes) => {
-    setLocalData((prev) => ({
-      ...prev,
-      [id]: { ...(prev[id] || {}), ...changes },
-    }));
-    setSelectedQuote((prev) => (prev?.id === id ? { ...prev, ...changes } : prev));
-    toast.success("Updated record details (Session state).");
+  const handleOpenLeadDetail = (row) => {
+    const crmLead = {
+      id: row.id,
+      lead_code: `QTE-${row.id}`,
+      type: "equipment_quote",
+      customer_name: row.full_name,
+      contact_person: row.full_name,
+      phone: row.phone_no || row.phone,
+      email: row.email,
+      state: row.state,
+      city: row.city || row.location,
+      equipment_interest: row.model_name || "Featured Equipment",
+      model_name: row.model_name,
+      product_id: row.product_id,
+      message: `Buyer inquiry for ${row.model_name}. Role: ${row.role || "Contractor"}`,
+      pipeline_stage: row.pipeline_stage,
+      status: row.status,
+      priority: row.priority === "high" ? "hot" : row.priority === "low" ? "cold" : "warm",
+      assigned_to: row.assigned_to,
+      assigned_name: row.assigned_name,
+      created_at: row.created_at,
+    };
+    setSelectedLead(crmLead);
   };
 
   // Columns definition
@@ -179,7 +194,7 @@ export const FeatureEquipmentQuotes = () => {
     () => [
       {
         key: "full_name",
-        label: "Customer",
+        label: "Customer & Role",
         render: (_, row) => (
           <div className="flex items-center gap-3 min-w-0">
             <Avatar name={row.full_name} size="sm" />
@@ -203,12 +218,10 @@ export const FeatureEquipmentQuotes = () => {
               {row.model_name || row.brand_name || "Featured Product"}
             </span>
             <div className="flex items-center gap-2 text-[11px] text-slate-400">
-              {row.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {row.location}
-                </span>
-              )}
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                {row.city ? `${row.city}, ` : ""}{row.state}
+              </span>
               {row.product_id && <span>ID: {row.product_id}</span>}
             </div>
           </div>
@@ -238,6 +251,22 @@ export const FeatureEquipmentQuotes = () => {
         ),
       },
       {
+        key: "assigned_name",
+        label: "Lead Owner",
+        render: (val) => (
+          val ? (
+            <span className="font-medium text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              {val}
+            </span>
+          ) : (
+            <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">
+              Unassigned
+            </span>
+          )
+        ),
+      },
+      {
         key: "priority",
         label: "Priority",
         render: (val) => <PriorityBadge priority={val || "medium"} size="sm" />,
@@ -261,27 +290,40 @@ export const FeatureEquipmentQuotes = () => {
         label: "Action",
         align: "right",
         render: (_, row) => (
-          <button
+          <Button
             type="button"
-            onClick={() => setSelectedQuote(row)}
-            className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-            title="View quote details"
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenLeadDetail(row);
+            }}
+            icon={Eye}
           >
-            <Eye className="w-4 h-4" />
-          </button>
+            View
+          </Button>
         ),
       },
     ],
     []
   );
 
+  const tabs = [
+    { value: "all", label: "All Quotes", count: statusCounts.all || enrichedQuotes.length },
+    { value: "new", label: "New", count: statusCounts.new || 0 },
+    { value: "contacted", label: "Contacted", count: statusCounts.contacted || 0 },
+    { value: "resolved", label: "Resolved", count: statusCounts.resolved || 0 },
+  ];
+
+  const hasActiveFilters = Boolean(searchTerm.trim() || statusFilter !== "all" || sortBy !== "newest");
+
   return (
     <div className="space-y-4">
       {/* Page Header */}
       <PageHeader
         title="Feature Equipment Quotes"
-        subtitle={`Product quotation requests for ${brandName} featured inventory`}
-        breadcrumbs={[{ label: "Operations" }, { label: "Feature Equipment Quotes" }]}
+        subtitle={`Product quotation requests for ${brandName} featured inventory with territorial assignment`}
+        breadcrumbs={[{ label: "Lead Management" }, { label: "Feature Equipment Quotes" }]}
         actions={
           <div className="flex items-center gap-2">
             {canExport && (
@@ -308,25 +350,39 @@ export const FeatureEquipmentQuotes = () => {
         }
       />
 
-      {/* Filter and Search Bar */}
-      <FilterBar
+      {/* Unified TableToolbar */}
+      <TableToolbar
         search={searchTerm}
         onSearchChange={setSearchTerm}
-        searchPlaceholder="Search buyer, model, phone, email, location..."
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        statusCounts={statusCounts}
-        statusOptions={[
-          { value: "all", label: "All Quotes" },
-          { value: "new", label: "New" },
-          { value: "contacted", label: "Contacted" },
-          { value: "resolved", label: "Resolved" },
+        searchPlaceholder="Search buyer, model, phone, email, territory..."
+        tabs={tabs}
+        activeTab={statusFilter}
+        onTabChange={setStatusFilter}
+        filters={[
+          {
+            key: "sort",
+            label: "Sort By",
+            placeholder: "Sort by...",
+            value: sortBy,
+            onChange: setSortBy,
+            options: [
+              { value: "newest", label: "Newest First" },
+              { value: "oldest", label: "Oldest First" },
+              { value: "name", label: "Customer Name" },
+            ],
+            isClearable: false,
+            width: "w-40",
+          },
         ]}
-        sortBy={sortBy}
-        onSortByChange={setSortBy}
+        hasActiveFilters={hasActiveFilters}
+        onClear={() => {
+          setSearchTerm("");
+          setStatusFilter("all");
+          setSortBy("newest");
+        }}
       />
 
-      {/* Main Data Table */}
+      {/* Main DataTable with integrated Pagination */}
       <DataTable
         columns={columns}
         data={filteredData}
@@ -337,205 +393,27 @@ export const FeatureEquipmentQuotes = () => {
         selectedIds={selectedIds}
         onSelectRow={toggleSelect}
         onSelectAll={toggleSelectAll}
-        onRowClick={(row) => setSelectedQuote(row)}
+        onRowClick={(row) => handleOpenLeadDetail(row)}
         emptyTitle="No equipment quotes found"
         emptyDescription="No quotation requests match your current search and filter settings."
+        pagination={
+          !isLoading && !error && totalRecords > 0
+            ? {
+                currentPage: page,
+                totalPages: lastPage,
+                totalRecords: totalRecords,
+                onPageChange: (targetPage) => fetchQuotes(targetPage),
+              }
+            : null
+        }
       />
 
-      {/* Pagination */}
-      {!isLoading && !error && totalRecords > 0 && (
-        <Pagination
-          currentPage={page}
-          totalPages={lastPage}
-          totalRecords={totalRecords}
-          onPageChange={(targetPage) => fetchQuotes(targetPage)}
-        />
-      )}
-
-      {/* Detail Drawer */}
-      <Drawer
-        isOpen={Boolean(selectedQuote)}
-        onClose={() => setSelectedQuote(null)}
-        title={selectedQuote?.full_name || "Quotation Request"}
-        subtitle={`Quote #${selectedQuote?.id || ""}`}
-        footer={
-          <div className="flex items-center gap-2">
-            {selectedQuote?.phone_no && (
-              <>
-                <a
-                  href={getWhatsAppLink(
-                    selectedQuote.phone_no,
-                    `Hello ${selectedQuote.full_name}, regarding your quotation request for ${selectedQuote.model_name} on Equipments Dekho...`
-                  )}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>WhatsApp</span>
-                </a>
-                <a
-                  href={getPhoneLink(selectedQuote.phone_no)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-3 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
-                >
-                  <Phone className="w-4 h-4" />
-                  <span>Call</span>
-                </a>
-              </>
-            )}
-            {selectedQuote?.email && (
-              <a
-                href={getEmailLink(
-                  selectedQuote.email,
-                  `Equipments Dekho Quote Request - ${selectedQuote.model_name}`
-                )}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-3 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg border border-slate-700 shadow-sm transition-colors cursor-pointer"
-              >
-                <Mail className="w-4 h-4" />
-                <span>Email</span>
-              </a>
-            )}
-          </div>
-        }
-      >
-        {selectedQuote && (
-          <div className="space-y-6">
-            {/* Equipment Image & Name */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/40">
-              {selectedQuote.image ? (
-                <div className="h-44 w-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                  <img
-                    src={selectedQuote.image}
-                    alt={selectedQuote.model_name || "Equipment"}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                    }}
-                  />
-                </div>
-              ) : null}
-              <div className="p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">
-                    {selectedQuote.brand_name || brandName}
-                  </span>
-                  <PriorityBadge priority={selectedQuote.priority || "medium"} size="xs" />
-                </div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
-                  {selectedQuote.model_name || "Featured Product Model"}
-                </h4>
-                {selectedQuote.location && (
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{selectedQuote.location}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Buyer Details */}
-            <div className="space-y-2">
-              <h5 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                Customer Information
-              </h5>
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 text-xs">
-                <div className="p-3 flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Full Name</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {selectedQuote.full_name || "Not provided"}
-                  </span>
-                </div>
-                <div className="p-3 flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Buyer Type</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {formatRole(selectedQuote.role)}
-                  </span>
-                </div>
-                <div className="p-3 flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Phone</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {selectedQuote.phone_no || "Not provided"}
-                  </span>
-                </div>
-                <div className="p-3 flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Email</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
-                    {selectedQuote.email || "Not provided"}
-                  </span>
-                </div>
-                <div className="p-3 flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Request Date</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {formatDateTime(selectedQuote.created_at)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Priority and Status Toggles */}
-            {canUpdate && (
-              <div className="space-y-3">
-                <h5 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                  Lead Qualification
-                </h5>
-
-                {/* Status Toggles */}
-                <div>
-                  <label className="text-[11px] text-slate-500 block mb-1.5 font-medium">
-                    Status (Session state)
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {["new", "contacted", "resolved"].map((st) => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => handleUpdateRecord(selectedQuote.id, { status: st })}
-                        className={`h-8 text-xs font-semibold rounded-lg border transition-all cursor-pointer capitalize ${
-                          selectedQuote.status === st
-                            ? "bg-orange-600 text-white border-orange-600 shadow-xs"
-                            : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400"
-                        }`}
-                      >
-                        {st}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Priority Toggles */}
-                <div>
-                  <label className="text-[11px] text-slate-500 block mb-1.5 font-medium">
-                    Priority Rating
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {["high", "medium", "low"].map((pr) => (
-                      <button
-                        key={pr}
-                        type="button"
-                        onClick={() => handleUpdateRecord(selectedQuote.id, { priority: pr })}
-                        className={`h-8 text-xs font-semibold rounded-lg border transition-all cursor-pointer capitalize ${
-                          selectedQuote.priority === pr
-                            ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-xs"
-                            : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400"
-                        }`}
-                      >
-                        {pr}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-1.5 text-[11px] text-slate-400 pt-1">
-                  <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                  <span>
-                    Status updates reflect within your current active session. Server-side persistence API will synchronize when released.
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </Drawer>
+      {/* Unified CRM Lead 360 Drawer */}
+      <LeadDetail
+        isOpen={Boolean(selectedLead)}
+        onClose={() => setSelectedLead(null)}
+        lead={selectedLead}
+      />
     </div>
   );
 };

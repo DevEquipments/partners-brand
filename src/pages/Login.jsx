@@ -8,6 +8,7 @@ import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import Checkbox from "../components/common/Checkbox";
 import ThemeToggle from "../components/layout/ThemeToggle";
+import { normalizeUserType } from "../utils/roleUtils";
 import toast from "react-hot-toast";
 import logo from "../assets/logo.png";
 
@@ -40,28 +41,64 @@ export const Login = () => {
         password: data.password,
       });
 
-      const token =
-        response.token || response.data?.token || response.access_token;
-      const userData = response.user || response.data?.user;
-
-      if (token) {
-        login(token, userData);
-        toast.success("Authentication successful. Welcome back.");
-        await fetchProfile();
-        navigate("/dashboard", { replace: true });
-      } else {
-        const msg = response.message || "Invalid credentials. Please verify your email and password.";
+      if (response?.status === false) {
+        const msg = response?.message || "Invalid credentials. Please verify your email and password.";
         setAuthError(msg);
         toast.error(msg);
+        return;
       }
+
+      const token =
+        response.token || response.data?.token || response.access_token;
+
+      if (!token) {
+        const msg = response.message || "Authentication token missing from response.";
+        setAuthError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      const rawUserType = response.user_type || response.data?.user_type;
+      const normalizedRole = normalizeUserType(rawUserType);
+
+      if (!normalizedRole) {
+        const msg = rawUserType
+          ? `Unauthorized account type (${rawUserType}). Please contact administrator.`
+          : "Missing account authorization type in server response.";
+        setAuthError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      const userData =
+        response.data && typeof response.data === "object" && !response.data.token
+          ? response.data
+          : response.user || {};
+
+      const fullUserData = {
+        ...userData,
+        user_type: rawUserType,
+        role: normalizedRole,
+      };
+
+      login(token, fullUserData, rawUserType);
+      toast.success("Authentication successful. Welcome back.");
+
+      // Fetch latest profile metadata asynchronously in background without blocking redirection
+      fetchProfile().catch(() => {});
+
+      // Navigate to the role-aware dashboard
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       const msg =
         error?.message ||
         error?.response?.data?.message ||
         error?.response?.data?.error ||
-        "Authentication failed. Please check your credentials.";
+        "Unable to log in. Please check your credentials and try again.";
       setAuthError(msg);
-      toast.error(msg);
+      if (!error?.toastShown) {
+        toast.error(msg, { id: "auth-login-error" });
+      }
     } finally {
       setIsLoading(false);
     }

@@ -1,7 +1,9 @@
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import Checkbox from "./Checkbox";
 import LoadingState from "./LoadingState";
 import EmptyState from "./EmptyState";
 import ErrorState from "./ErrorState";
+import Pagination from "./Pagination";
 
 export const DataTable = ({
   columns = [],
@@ -17,6 +19,10 @@ export const DataTable = ({
   onSelectAll,
   onRowClick,
   rowKey = "id",
+  sortColumn,
+  sortDirection = "asc", // 'asc' | 'desc'
+  onSort,
+  pagination,
   className = "",
 }) => {
   const isAllSelected =
@@ -40,15 +46,52 @@ export const DataTable = ({
                   />
                 </th>
               )}
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-4 py-3 font-bold text-[11px] ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"} ${col.className || ""}`}
-                  style={col.width ? { width: col.width } : undefined}
-                >
-                  {col.label}
-                </th>
-              ))}
+              {columns.map((col) => {
+                const isSorted = sortColumn === col.key;
+                const canSort = col.sortable && onSort;
+
+                return (
+                  <th
+                    key={col.key}
+                    onClick={() => canSort && onSort(col.key)}
+                    className={`px-4 py-3 font-bold text-[11px] ${
+                      col.align === "right"
+                        ? "text-right"
+                        : col.align === "center"
+                        ? "text-center"
+                        : "text-left"
+                    } ${canSort ? "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" : ""} ${
+                      col.className || ""
+                    }`}
+                    style={col.width ? { width: col.width } : undefined}
+                  >
+                    <div
+                      className={`flex items-center gap-1.5 ${
+                        col.align === "right"
+                          ? "justify-end"
+                          : col.align === "center"
+                          ? "justify-center"
+                          : "justify-start"
+                      }`}
+                    >
+                      <span>{col.label}</span>
+                      {canSort && (
+                        <span className="text-slate-400 dark:text-slate-500">
+                          {isSorted ? (
+                            sortDirection === "asc" ? (
+                              <ArrowUp className="w-3.5 h-3.5 text-orange-500" />
+                            ) : (
+                              <ArrowDown className="w-3.5 h-3.5 text-orange-500" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 opacity-60 hover:opacity-100" />
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
 
@@ -71,7 +114,7 @@ export const DataTable = ({
                 >
                   <ErrorState
                     title="Failed to load records"
-                    message={error}
+                    message={typeof error === "string" ? error : error?.message || "An unexpected error occurred"}
                     onRetry={onRetry}
                   />
                 </td>
@@ -87,7 +130,7 @@ export const DataTable = ({
               </tr>
             ) : (
               data.map((row, idx) => {
-                const id = row[rowKey] || idx;
+                const id = row[rowKey] !== undefined ? row[rowKey] : idx;
                 const isSelected = selectedIds.has(id);
 
                 return (
@@ -124,7 +167,7 @@ export const DataTable = ({
                             : "text-left"
                         } ${col.cellClassName || ""}`}
                       >
-                        {col.render ? col.render(row[col.key], row, idx) : row[col.key] || "-"}
+                        {col.render ? col.render(row[col.key], row, idx) : row[col.key] ?? "-"}
                       </td>
                     ))}
                   </tr>
@@ -134,6 +177,17 @@ export const DataTable = ({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Integration */}
+      {pagination && (
+        <Pagination
+          currentPage={pagination.currentPage || pagination.page || 1}
+          totalPages={pagination.totalPages || 1}
+          totalRecords={pagination.totalRecords !== undefined ? pagination.totalRecords : pagination.total || 0}
+          onPageChange={pagination.onPageChange}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   );
 };

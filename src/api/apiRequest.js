@@ -1,7 +1,6 @@
 import API from "./axios";
 
 export const apiRequest = async (config) => {
-  // console.log("config", config)
   try {
     const response = await API({
       url: config.url,
@@ -9,16 +8,28 @@ export const apiRequest = async (config) => {
       ...(config.data && { data: config.data }),
       ...(config.params && { params: config.params }),
       ...(config.headers && { headers: config.headers }),
+      ...(config.skipGlobalToast !== undefined && { skipGlobalToast: config.skipGlobalToast }),
+      ...(config.silent !== undefined && { silent: config.silent }),
     });
 
-    // console.log("response", response)
     return response.data;
   } catch (error) {
-    throw (
-      error?.response?.data || {
-        success: false,
-        message: error.message || "Something went wrong",
-      }
-    );
+    const errorData = error?.response?.data;
+    const message =
+      errorData?.message ||
+      errorData?.error ||
+      error.message ||
+      "Something went wrong";
+
+    const err = new Error(message);
+    err.name = "ApiError";
+    err.response = error?.response;
+    err.status = error?.response?.status;
+    err.data = errorData;
+    err.errors = errorData?.errors || {};
+    err.toastShown = Boolean(error?.toastShown);
+    err.success = false;
+
+    throw err;
   }
 };
