@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
+import Sidebar from "../components/layout/Sidebar";
+import TopHeader from "../components/layout/TopHeader";
 
-const DashboardLayout = () => {
+export const DashboardLayout = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    // Layer 1: cool-gray page background — clearly distinct from white cards
-    <div className="flex h-screen overflow-hidden bg-[#eceef3]">
-      {/* Layer 2: dark sidebar */}
+    <div className="flex h-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased">
+      {/* Sidebar navigation */}
       <Sidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
@@ -18,14 +17,14 @@ const DashboardLayout = () => {
         setIsMobileOpen={setIsMobileOpen}
       />
 
+      {/* Main layout container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Layer 3: white navbar */}
-        <Navbar onMenuToggle={() => setIsMobileOpen(true)} />
+        {/* Top header */}
+        <TopHeader onMenuToggle={() => setIsMobileOpen(true)} />
 
-        {/* Content area — white cards float on [#eceef3] */}
-        <main className="flex-1 overflow-y-auto bg-[#f2f4ff]">
-          <div className="px-5 py-5 md:px-7 md:py-6 mx-auto w-full">
-            
+        {/* Workspace body */}
+        <main className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-950 p-4 md:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto w-full space-y-6">
             <Outlet />
           </div>
         </main>

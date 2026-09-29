@@ -28,7 +28,8 @@ const API_ENDPOINTS = {
     url: "/get-feature-equipment-quotes",
     method: "post"
   },
-  endPointPremiumBrandsList: {
+  // endPointPremiumBrandsList: {
+  getPremiumBrandsList: {
     url: "get-PremiumBrandsList",
     method: "post",
   },
@@ -41,8 +42,27 @@ const API_ENDPOINTS = {
   getDashboardData: {
     url: "get-dashboard-data",
     method: "post"
-  }
+  },
 
+  addPremiumBrandPermission: {
+    url: "/premium-brand-add-permission",
+    method: "post",
+  },
+
+  editPremiumBrandPermission: {
+    url: "/premium-brand-edit-permission",
+    method: "post",
+  },
+
+  getSubAdmins: {
+    url: "/get-subadmins",
+    method: "post",
+  },
+
+  getPremiumBrandPermissions: {
+    url: "/get-premium-brand-permissions",
+    method: "post",
+  },
 };
 
 export default API_ENDPOINTS;
