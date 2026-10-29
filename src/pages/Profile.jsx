@@ -191,7 +191,7 @@ export const Profile = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Section 1: Corporate Credentials */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/60">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-orange-600" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
@@ -277,7 +277,7 @@ export const Profile = () => {
 
         {/* Section 2: Contact Records */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/60">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-blue-600" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
@@ -349,7 +349,7 @@ export const Profile = () => {
 
         {/* Section 3: Office Address */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/60">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-600" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
@@ -373,7 +373,7 @@ export const Profile = () => {
 
         {/* Section 4: Account Security & Platform Governance */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/60">
             <div className="flex items-center gap-2">
               <Hash className="w-4 h-4 text-slate-600 dark:text-slate-400" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">

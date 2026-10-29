@@ -15,11 +15,31 @@
   --color-brand-700: #c2410c;
   --color-brand-800: #9a3412;
   --color-brand-900: #7c2d12;
+  --color-slate-750: #263348;
+  --color-slate-850: #172033;
 }
 
 /* Global Root Styles */
 :root {
   color-scheme: light dark;
+}
+
+/* Global Table & Header Dark Mode Consistency */
+.dark table thead tr {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark table thead th,
+.dark .data-table thead th {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+.dark table thead th.sticky,
+.dark table thead.sticky th {
+  background-color: #1e293b;
 }
 
 body {
@@ -51,5 +71,14 @@ body {
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+
+/* Scrollbar Utility to hide bars on horizontally scrolling tabs while preserving scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 

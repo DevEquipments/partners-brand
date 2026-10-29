@@ -9,7 +9,7 @@ export const LoadingState = ({ text = "Loading data...", rows = 5, skeleton = fa
             <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0" />
             <div className="flex-1 space-y-2">
               <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
-              <div className="h-2 bg-slate-100 dark:bg-slate-850 rounded w-1/2" />
+              <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
             </div>
             <div className="w-16 h-5 bg-slate-200 dark:bg-slate-800 rounded-full shrink-0" />
           </div>

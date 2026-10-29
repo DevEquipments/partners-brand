@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import { usePermissionContext } from "../context/PermissionContext";
 import { PERMISSIONS, MODULES, MODULE_PERMISSION_MAP } from "../config/permissions";
-import { subAdminPermissionService } from "../services/subAdminPermissionService";
 import { resolveSlugToActions, hasModulePermission } from "../utils/permissionResolver";
 
 export { PERMISSIONS, MODULES };
@@ -15,12 +14,16 @@ export const usePermissions = () => {
     isDefinitionsLoading = false,
     definitionsError = null,
     refreshAdminPermissions,
+    subAdminSidebarItems = [],
+    isSubAdminSidebarLoading = false,
+    subAdminSidebarError = null,
+    refreshSubAdminSidebar,
   } = usePermissionContext();
 
   const isAdmin = role === "ADMIN";
   const isSubAdmin = role === "SUB_ADMIN";
 
-  // Sub Admin permissions list provided by stored assignments, user profile, or backend
+  // Sub Admin permissions list provided by sub-admin-sidebar API, stored assignments, user profile, or backend
   const userPermissions = useMemo(() => {
     if (isAdmin) {
       return Object.values(PERMISSIONS);
@@ -30,73 +33,21 @@ export const usePermissions = () => {
       return [];
     }
 
-    // 1. Check if module permissions were configured and saved for this specific Sub Admin
-    const storedPerms = user?.id ? subAdminPermissionService.getStoredPermissions(user.id) : null;
-    if (storedPerms && typeof storedPerms === "object") {
-      const resolved = new Set();
-      // Always allow basic personal dashboard and profile
-      resolved.add(PERMISSIONS.DASHBOARD_VIEW);
-      resolved.add(PERMISSIONS.PROFILE_VIEW);
+    const resolved = new Set();
+    // Always allow basic personal dashboard and profile
+    resolved.add(PERMISSIONS.DASHBOARD_VIEW);
+    resolved.add(PERMISSIONS.PROFILE_VIEW);
 
-      for (const [slug, isEnabled] of Object.entries(storedPerms)) {
-        if (isEnabled) {
-          const actions = resolveSlugToActions(slug);
-          actions.forEach((act) => resolved.add(act));
-        }
-      }
-
-      return Array.from(resolved);
-    }
-
-    // 2. Fall back to raw permissions array if returned by backend login/profile
-    const rawPerms = user?.permissions;
-    if (Array.isArray(rawPerms) && rawPerms.length > 0) {
-      const resolved = new Set();
-      // Always allow dashboard and profile for authenticated Sub Admin
-      resolved.add(PERMISSIONS.DASHBOARD_VIEW);
-      resolved.add(PERMISSIONS.PROFILE_VIEW);
-
-      rawPerms.forEach((item) => {
-        const str = typeof item === "string" ? item : item?.slug || item?.name || "";
-        const clean = str.trim().toLowerCase();
-
-        // Exact match against known permission keys
-        if (Object.values(PERMISSIONS).includes(str)) {
-          resolved.add(str);
-        }
-
-        // Slug / module-level mapping
-        if (clean.includes("enquir") || clean.includes("inquir")) {
-          resolved.add(PERMISSIONS.ENQUIRIES_VIEW);
-          resolved.add(PERMISSIONS.ENQUIRIES_UPDATE);
-        }
-        if (clean.includes("quote") && !clean.includes("quotation")) {
-          resolved.add(PERMISSIONS.QUOTES_VIEW);
-          resolved.add(PERMISSIONS.QUOTES_UPDATE);
-        }
-        if (clean.includes("lead")) {
-          resolved.add(PERMISSIONS.LEADS_VIEW);
-          resolved.add(PERMISSIONS.LEADS_UPDATE);
-        }
-        if (clean.includes("followup") || clean.includes("follow_up") || clean.includes("follow-up")) {
-          resolved.add(PERMISSIONS.FOLLOWUPS_VIEW);
-          resolved.add(PERMISSIONS.FOLLOWUPS_CREATE);
-          resolved.add(PERMISSIONS.FOLLOWUPS_UPDATE);
-        }
-        if (clean.includes("quotation")) {
-          resolved.add(PERMISSIONS.QUOTATIONS_VIEW);
-        }
+    // Strictly resolve from dynamically permitted items from POST /sub-admin-sidebar
+    if (Array.isArray(subAdminSidebarItems) && subAdminSidebarItems.length > 0) {
+      subAdminSidebarItems.forEach((item) => {
+        const actions = resolveSlugToActions(item);
+        actions.forEach((act) => resolved.add(act));
       });
-
-      return Array.from(resolved);
     }
 
-    // 3. When no permissions are found for Sub Admin, provide only basic account views.
-    return [
-      PERMISSIONS.DASHBOARD_VIEW,
-      PERMISSIONS.PROFILE_VIEW,
-    ];
-  }, [isAdmin, isSubAdmin, user]);
+    return Array.from(resolved);
+  }, [isAdmin, isSubAdmin, subAdminSidebarItems]);
 
   const hasPermission = (permissionKey) => {
     if (isAdmin) return true;
@@ -114,10 +65,24 @@ export const usePermissions = () => {
       return false; // Strictly Admin only
     }
 
-    const storedPerms = user?.id ? subAdminPermissionService.getStoredPermissions(user.id) : null;
-    const activePerms = storedPerms || user?.permissions;
-    if (activePerms) {
-      return hasModulePermission(activePerms, moduleKey);
+    // Basic account modules always accessible
+    if (moduleKey === MODULES.DASHBOARD || moduleKey === MODULES.PROFILE) {
+      return true;
+    }
+
+    if (isSubAdmin) {
+      // While sub-admin sidebar items are loading, prevent unauthorized flash/access
+      if (isSubAdminSidebarLoading) {
+        return false;
+      }
+
+      // If sidebar request errored or returned empty, fail closed for permission-controlled modules
+      if (subAdminSidebarError || !Array.isArray(subAdminSidebarItems) || subAdminSidebarItems.length === 0) {
+        return false;
+      }
+
+      // Strictly check permitted items returned by POST /sub-admin-sidebar
+      return hasModulePermission(subAdminSidebarItems, moduleKey);
     }
 
     const requiredPermission = MODULE_PERMISSION_MAP[moduleKey];
@@ -155,6 +120,10 @@ export const usePermissions = () => {
     isDefinitionsLoading,
     definitionsError,
     refreshAdminPermissions,
+    subAdminSidebarItems,
+    isSubAdminSidebarLoading,
+    subAdminSidebarError,
+    refreshSubAdminSidebar,
     assignedTerritories,
     hasTerritoryAccess,
     hasPermission,

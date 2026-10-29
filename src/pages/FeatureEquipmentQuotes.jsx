@@ -318,7 +318,7 @@ export const FeatureEquipmentQuotes = () => {
   const hasActiveFilters = Boolean(searchTerm.trim() || statusFilter !== "all" || sortBy !== "newest");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full min-w-0">
       {/* Page Header */}
       <PageHeader
         title="Feature Equipment Quotes"

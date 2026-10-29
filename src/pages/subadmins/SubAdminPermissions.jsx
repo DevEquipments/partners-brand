@@ -16,7 +16,7 @@ import { TableSkeleton } from "../../components/common/Skeletons";
 
 export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const subAdminIdFromUrl = propSubAdminId || searchParams.get("subAdminId");
+  const subAdminIdFromUrl = searchParams.get("subAdminId") || propSubAdminId;
   const { isAdmin } = usePermissions();
 
   const {
@@ -24,9 +24,12 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
     subAdmins,
     selectedSubAdminId,
     selectedSubAdmin,
+    roleId,
     permissions,
     isDirty,
     isLoading,
+    isLoadingAssigned,
+    assignedError,
     isSaving,
     error,
     handleSelectSubAdmin,
@@ -34,6 +37,7 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
     handleCancel,
     handleSave,
     retry,
+    retryAssigned,
   } = useSubAdminPermissions(subAdminIdFromUrl);
 
   // Format options for react-select SearchableSelect using real sub admin data
@@ -48,9 +52,9 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
   const onSelectChange = (id) => {
     handleSelectSubAdmin(id);
     if (id) {
-      setSearchParams({ subAdminId: id });
+      setSearchParams({ subAdminId: id, view: "access" });
     } else {
-      setSearchParams({});
+      setSearchParams({ view: "access" });
     }
   };
 
@@ -71,7 +75,7 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
     );
   }
 
-  // Error State
+  // Error State for initial data load
   if (error) {
     return (
       <div className="py-12">
@@ -85,7 +89,7 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 px-1 sm:px-2">
+    <div className="max-w-5xl mx-auto space-y-6 px-1 sm:px-2 w-full min-w-0">
       {/* Top Back Action */}
       {onBack && (
         <div>
@@ -101,12 +105,12 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
       )}
 
       {/* Page Header */}
-      <div className="flex items-center gap-3.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex items-center gap-3.5 pb-4 border-b border-slate-200 dark:border-slate-800 min-w-0">
         <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border border-orange-200/80 dark:border-orange-900/60 flex items-center justify-center shrink-0 shadow-2xs">
           <ShieldCheck className="w-5 h-5" />
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight truncate">
             Sub Admin Permissions
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -115,7 +119,7 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
         </div>
       </div>
 
-      {/* Loading State */}
+      {/* Initial Loading State */}
       {isLoading ? (
         <div className="space-y-4">
           <div className="h-20 bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse" />
@@ -145,69 +149,107 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
               isLoading={isLoading}
             />
 
-            {/* Compact Sub Admin Identity Summary */}
+            {/* Sub Admin Identity Summary */}
             {selectedSubAdmin && (
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                <div>
-                  <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                    Sub Admin ID
-                  </span>
-                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                    #{selectedSubAdmin.id}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                    Username
-                  </span>
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    @{selectedSubAdmin.username}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                    Company
-                  </span>
-                  <span
-                    className="text-slate-700 dark:text-slate-300 truncate block font-medium"
-                    title={selectedSubAdmin.company_name || "-"}
-                  >
-                    {selectedSubAdmin.company_name || "-"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                    Email
-                  </span>
-                  <span
-                    className="text-slate-700 dark:text-slate-300 truncate block"
-                    title={selectedSubAdmin.email || "-"}
-                  >
-                    {selectedSubAdmin.email || "-"}
-                  </span>
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                      Sub Admin ID
+                    </span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                      #{selectedSubAdmin.id}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                      Role ID
+                    </span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      #{roleId}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                      Username
+                    </span>
+                    <span className="font-semibold text-slate-900 dark:text-white truncate block">
+                      @{selectedSubAdmin.username}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                      Company
+                    </span>
+                    <span
+                      className="text-slate-700 dark:text-slate-300 truncate block font-medium"
+                      title={selectedSubAdmin.company_name || "-"}
+                    >
+                      {selectedSubAdmin.company_name || "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                      Phone
+                    </span>
+                    <span
+                      className="text-slate-700 dark:text-slate-300 truncate block font-mono text-xs"
+                      title={selectedSubAdmin.phone_no || selectedSubAdmin.phone || "-"}
+                    >
+                      {selectedSubAdmin.phone_no || selectedSubAdmin.phone || "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                      Email
+                    </span>
+                    <span
+                      className="text-slate-700 dark:text-slate-300 truncate block"
+                      title={selectedSubAdmin.email || "-"}
+                    >
+                      {selectedSubAdmin.email || "-"}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* MODULE ACCESS CONTROL CARD */}
+          {/* PERMISSIONS CARD */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-4 shadow-2xs">
             <div>
               <h2 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                Module Access Control
+                Assign Permissions
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Toggle module access for {selectedSubAdmin ? `@${selectedSubAdmin.username}` : "the selected Sub Admin"}. Enabled modules will be visible in their portal.
+                Enable or disable permissions for {selectedSubAdmin ? `@${selectedSubAdmin.username}` : "the selected Sub Admin"}.
               </p>
             </div>
 
-            {/* Dynamic Permission List */}
-            <PermissionTable
-              definitions={definitions}
-              permissions={permissions}
-              onChange={handlePermissionChange}
-              disabled={isLoading || isSaving}
-            />
+            {/* Assigned Permissions Loading State */}
+            {isLoadingAssigned ? (
+              <div className="py-6 space-y-3">
+                <div className="h-9 bg-slate-100 dark:bg-slate-800 rounded-md animate-pulse" />
+                <TableSkeleton rows={4} cols={2} />
+              </div>
+            ) : assignedError ? (
+              /* Assigned Permissions Error State (does NOT show false OFFs) */
+              <div className="py-6">
+                <ErrorState
+                  title="Failed to load assigned permissions"
+                  message={assignedError}
+                  onRetry={retryAssigned}
+                />
+              </div>
+            ) : (
+              /* Dynamic Permission List */
+              <PermissionTable
+                definitions={definitions}
+                permissions={permissions}
+                onChange={handlePermissionChange}
+                disabled={isLoading || isLoadingAssigned || isSaving || !roleId}
+              />
+            )}
 
             {/* Single Action Footer */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
@@ -216,7 +258,7 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
                 variant="outline"
                 size="sm"
                 onClick={handleCancel}
-                disabled={!isDirty || isSaving}
+                disabled={!isDirty || isSaving || !roleId}
               >
                 Cancel
               </Button>
@@ -227,7 +269,8 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
                 size="sm"
                 onClick={handleSave}
                 isLoading={isSaving}
-                disabled={!isDirty || isSaving}
+                disabled={!isDirty || isSaving || !roleId || isLoadingAssigned || Boolean(assignedError)}
+                title="Save module permissions"
               >
                 Save Permissions
               </Button>

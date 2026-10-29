@@ -9,7 +9,7 @@ export const SearchInput = ({
   ...props
 }) => {
   return (
-    <div className={`relative flex items-center min-w-[220px] max-w-sm ${className}`}>
+    <div className={`relative flex items-center w-full min-w-0 ${className}`}>
       <div className="absolute left-3 pointer-events-none text-slate-400 dark:text-slate-500">
         <Search className="w-3.5 h-3.5" />
       </div>
@@ -28,6 +28,7 @@ export const SearchInput = ({
             onChange?.("");
             onClear?.();
           }}
+          onMouseDown={(e) => e.preventDefault()}
           className="absolute right-2.5 p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
           aria-label="Clear search"
         >

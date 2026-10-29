@@ -59,8 +59,28 @@ const API_ENDPOINTS = {
     method: "post",
   },
 
+  createPremiumBrandSubAdmin: {
+    url: "/create-premium-brand-sub-admins",
+    method: "post",
+  },
+
   getPremiumBrandPermissions: {
     url: "/get-premium-brand-permissions",
+    method: "post",
+  },
+
+  addPremiumBrandRolePermission: {
+    url: "/add-premium-brand-role-permission",
+    method: "post",
+  },
+
+  subAdminSidebar: {
+    url: "/sub-admin-sidebar",
+    method: "post",
+  },
+
+  deleteRolePermission: {
+    url: "/delete-role-permission",
     method: "post",
   },
 };

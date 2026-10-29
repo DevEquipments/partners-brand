@@ -20,11 +20,23 @@ export const Sidebar = ({
 }) => {
   const { user, role, logout } = useAuth();
   const { brandName } = useBrand();
-  const { canAccessModule, adminPermissionDefinitions, isDefinitionsLoading } = usePermissions();
+  const {
+    canAccessModule,
+    adminPermissionDefinitions,
+    isDefinitionsLoading,
+    subAdminSidebarItems,
+    isSubAdminSidebarLoading,
+    subAdminSidebarError,
+    refreshSubAdminSidebar,
+  } = usePermissions();
   const navigate = useNavigate();
 
+  const isAdmin = role === "ADMIN";
+  const dynamicPermissions = isAdmin ? adminPermissionDefinitions : subAdminSidebarItems;
+  const isLoadingDynamic = isAdmin ? isDefinitionsLoading : isSubAdminSidebarLoading;
+
   const displayName = user?.name || user?.username || brandName || "Partner";
-  const roleLabel = role === "ADMIN" ? "Admin" : "Sub Admin";
+  const roleLabel = isAdmin ? "Admin" : "Sub Admin";
 
   const handleLogout = async () => {
     setIsMobileOpen(false);
@@ -83,15 +95,15 @@ export const Sidebar = ({
 
         {/* Navigation Sections */}
         <nav className="flex-1 overflow-y-auto p-2.5 space-y-4">
-          {getNavigationSections(role, adminPermissionDefinitions).map((section, sIdx) => {
+          {getNavigationSections(role, dynamicPermissions).map((section, sIdx) => {
             // Filter items permitted for user
             const allowedItems = section.items.filter((item) => {
-              if (item.adminOnly && role !== "ADMIN") return false;
+              if (item.adminOnly && !isAdmin) return false;
               return canAccessModule(item.module);
             });
 
             const isCrmSection = section.title === "CRM";
-            const showLoadingSkeleton = isCrmSection && isDefinitionsLoading && role === "ADMIN";
+            const showLoadingSkeleton = isCrmSection && isLoadingDynamic;
 
             // If neither items nor loading skeleton to show, skip section
             if (allowedItems.length === 0 && !showLoadingSkeleton) return null;
@@ -104,7 +116,7 @@ export const Sidebar = ({
                   </div>
                 )}
 
-                {/* Dynamic CRM loading skeleton for Admin */}
+                {/* Dynamic CRM loading skeleton */}
                 {showLoadingSkeleton && (
                   <div className="space-y-1 animate-pulse">
                     {[1, 2, 3, 4].map((n) => (
@@ -120,6 +132,21 @@ export const Sidebar = ({
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Sub Admin Error / Retry indicator if request failed */}
+                {!isAdmin && isCrmSection && subAdminSidebarError && !isLoadingDynamic && (
+                  <div className="px-3 py-2 my-1 rounded-lg bg-red-950/30 border border-red-900/40 text-[11px] text-red-400 flex items-center justify-between">
+                    <span className="truncate">Failed to load menu</span>
+                    <button
+                      type="button"
+                      onClick={refreshSubAdminSidebar}
+                      className="text-orange-400 hover:text-orange-300 font-bold ml-1 cursor-pointer shrink-0"
+                      title="Retry loading menu"
+                    >
+                      Retry
+                    </button>
                   </div>
                 )}
 

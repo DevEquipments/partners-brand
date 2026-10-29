@@ -264,20 +264,20 @@ export const AllLeads = () => {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in w-full min-w-0">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Layers className="w-5 h-5 text-orange-600" />
-            <span>Customer Leads</span>
+            <Layers className="w-5 h-5 text-orange-600 shrink-0" />
+            <span className="truncate">Customer Leads</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Centralized queue of inbound inquiries, equipment quotes, and customer requirements.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
           <Button
             variant="outline"
             size="sm"

@@ -114,7 +114,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
       {/* TAB 1: OVERVIEW */}
       {activeTab === "overview" && (
         <div className="overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 flex items-center justify-between">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
             <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
               Operator Credentials & Account Information
             </h3>
@@ -130,7 +130,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
           <table className="w-full text-left border-collapse text-xs">
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 w-1/3 bg-slate-50/30 dark:bg-slate-850/30">
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 w-1/3 bg-slate-50/30 dark:bg-slate-800/30">
                   Sub Admin ID
                 </td>
                 <td className="px-4 py-3 font-mono text-slate-900 dark:text-white font-bold">
@@ -138,7 +138,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-850/30">
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-800/30">
                   Username (Login)
                 </td>
                 <td className="px-4 py-3 font-mono text-slate-800 dark:text-slate-200 font-semibold">
@@ -146,7 +146,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-850/30">
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-800/30">
                   Official Email
                 </td>
                 <td className="px-4 py-3 text-slate-800 dark:text-slate-200">
@@ -154,7 +154,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-850/30">
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-800/30">
                   Contact Phone
                 </td>
                 <td className="px-4 py-3 font-mono text-slate-800 dark:text-slate-200">
@@ -162,7 +162,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-850/30">
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-800/30">
                   Associated Brand
                 </td>
                 <td className="px-4 py-3 text-slate-800 dark:text-slate-200 font-medium">
@@ -170,7 +170,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-850/30">
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-800/30">
                   System Role
                 </td>
                 <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
@@ -185,7 +185,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
       {/* TAB 2: COMPANY & OFFICE */}
       {activeTab === "company" && (
         <div className="overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
             <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
               Company & Physical Office Details
             </h3>
@@ -193,7 +193,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
           <table className="w-full text-left border-collapse text-xs">
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 w-1/3 bg-slate-50/30 dark:bg-slate-850/30">
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 w-1/3 bg-slate-50/30 dark:bg-slate-800/30">
                   Company Name
                 </td>
                 <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
@@ -201,7 +201,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-850/30">
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-800/30">
                   Office Address
                 </td>
                 <td className="px-4 py-3 text-slate-800 dark:text-slate-200">
@@ -209,7 +209,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-850/30">
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-800/30">
                   GST Registration
                 </td>
                 <td className="px-4 py-3 font-mono text-slate-800 dark:text-slate-200">

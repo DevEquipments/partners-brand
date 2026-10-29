@@ -84,18 +84,18 @@ export const UnassignedLeads = () => {
       </div>
 
       {/* Unassigned Table */}
-      <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs min-w-0">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse text-xs min-w-[700px]">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700/80 bg-slate-50/75 dark:bg-slate-900/50 text-slate-500 uppercase tracking-wider font-semibold">
-                <th className="py-3 px-4">Lead Code</th>
-                <th className="py-3 px-4">Customer</th>
-                <th className="py-3 px-4">Location</th>
-                <th className="py-3 px-4">Machine Requirement</th>
-                <th className="py-3 px-4">Priority</th>
-                <th className="py-3 px-4">Quick Route</th>
-                <th className="py-3 px-4 text-right">View</th>
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 uppercase tracking-wider font-bold">
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Lead Code</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Customer</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Location</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Machine Requirement</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Priority</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Quick Route</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 text-right whitespace-nowrap">View</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">

@@ -293,7 +293,7 @@ export const CustomerEnquiry = () => {
   const hasActiveFilters = Boolean(searchTerm.trim() || statusFilter !== "all" || sortBy !== "newest");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full min-w-0">
       {/* Page Header */}
       <PageHeader
         title="Customer Enquiry"

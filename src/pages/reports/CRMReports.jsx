@@ -109,27 +109,29 @@ export const CRMReports = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in w-full min-w-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-orange-600" />
-            <span>Brand CRM Analytics & Regional Reports</span>
+            <BarChart3 className="w-5 h-5 text-orange-600 shrink-0" />
+            <span className="truncate">Brand CRM Analytics & Regional Reports</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Performance analytics, lead volume conversion, and regional sales distribution for {brandName}.
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportPerformance}
-          icon={Download}
-        >
-          Export Report
-        </Button>
+        <div className="shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPerformance}
+            icon={Download}
+          >
+            Export Report
+          </Button>
+        </div>
       </div>
 
       {/* Top Metrics Row */}
