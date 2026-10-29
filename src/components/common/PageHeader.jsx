@@ -10,9 +10,9 @@ export const PageHeader = ({
 }) => {
   return (
     <div
-      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800 ${className}`}
+      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800 w-full min-w-0 ${className}`}
     >
-      <div>
+      <div className="min-w-0 flex-1">
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-1.5 select-none">
             {breadcrumbs.map((crumb, idx) => {
@@ -48,7 +48,7 @@ export const PageHeader = ({
         )}
       </div>
 
-      {actions && <div className="flex items-center gap-2.5 shrink-0">{actions}</div>}
+      {actions && <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">{actions}</div>}
     </div>
   );
 };

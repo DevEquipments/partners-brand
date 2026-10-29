@@ -19,23 +19,23 @@ export const TableToolbar = ({
 }) => {
   return (
     <div
-      className={`flex flex-col gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs ${className}`}
+      className={`flex flex-col gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs w-full min-w-0 ${className}`}
     >
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0">
         {/* Left Side: Search + Filter controls */}
-        <div className="flex flex-wrap items-center gap-2.5 flex-1">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
           {onSearchChange && (
             <SearchInput
               value={search || ""}
               onChange={onSearchChange}
               placeholder={searchPlaceholder}
-              className="w-full sm:w-64"
+              className="w-full sm:w-72 lg:w-80 min-w-0"
             />
           )}
 
           {/* Quick Tabs if provided */}
           {tabs && tabs.length > 0 && (
-            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700/60 overflow-x-auto">
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700/60 overflow-x-auto max-w-full no-scrollbar">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.value;
                 return (
@@ -113,7 +113,7 @@ export const TableToolbar = ({
 
         {/* Right Side: Actions Slot */}
         {actions && (
-          <div className="flex items-center gap-2 self-end lg:self-auto shrink-0">
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
             {actions}
           </div>
         )}

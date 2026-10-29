@@ -395,7 +395,7 @@ export const Dashboard = () => {
                       <div
                         key={lead.id}
                         onClick={() => navigate("/crm/leads")}
-                        className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
+                        className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -461,7 +461,7 @@ export const Dashboard = () => {
                     <div
                       key={lead.id}
                       onClick={() => navigate("/crm/follow-ups")}
-                      className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
+                      className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
                     >
                       <div className="min-w-0">
                         <span className="font-semibold text-slate-900 dark:text-white block truncate">
@@ -512,7 +512,7 @@ export const Dashboard = () => {
                     <div
                       key={enq.id || idx}
                       onClick={() => navigate("/crm/enquiries")}
-                      className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
+                      className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
                     >
                       <div className="min-w-0">
                         <span className="font-semibold text-slate-900 dark:text-white block truncate">
@@ -558,7 +558,7 @@ export const Dashboard = () => {
                       <div
                         key={quote.id || idx}
                         onClick={() => navigate("/crm/quotes")}
-                        className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
+                        className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 -mx-2 cursor-pointer transition-colors"
                       >
                         <div className="min-w-0">
                           <span className="font-semibold text-slate-900 dark:text-white block truncate">

@@ -10,6 +10,9 @@ import { useCRM } from "../../context/CRMContext";
 import { usePermissions } from "../../hooks/usePermissions";
 import { TableSkeleton } from "../../components/common/Skeletons";
 import SearchableSelect from "../../components/common/SearchableSelect";
+import Modal from "../../components/common/Modal";
+import Input from "../../components/common/Input";
+import Button from "../../components/common/Button";
 import { QUOTATION_DOC_STATUS_CONFIG } from "../../config/crmStatuses";
 import { formatDate } from "../../utils/dateUtils";
 import { exportToCsv } from "../../utils/exportCsv";
@@ -180,18 +183,18 @@ export const Quotations = () => {
       </div>
 
       {/* Quotations Table */}
-      <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs min-w-0">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse text-xs min-w-[760px]">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700/80 bg-slate-50/75 dark:bg-slate-900/50 text-slate-500 uppercase tracking-wider font-semibold">
-                <th className="py-3 px-4">Quotation #</th>
-                <th className="py-3 px-4">Customer & Account</th>
-                <th className="py-3 px-4">Equipment Proposal</th>
-                <th className="py-3 px-4">Commercial Value</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Validity</th>
-                <th className="py-3 px-4 text-right">Action</th>
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 uppercase tracking-wider font-bold">
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Quotation #</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Customer & Account</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Equipment Proposal</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Commercial Value</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Status</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 whitespace-nowrap">Validity</th>
+                <th className="py-3 px-4 bg-slate-50 dark:bg-slate-800 text-right whitespace-nowrap">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -280,29 +283,15 @@ export const Quotations = () => {
       </div>
 
       {/* View Quotation Modal */}
-      {selectedQuotation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
-            onClick={() => setSelectedQuotation(null)}
-          />
-          <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden z-10 text-xs p-6 space-y-4 animate-scale-up">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white font-mono">
-                  {selectedQuotation.quotation_number}
-                </h3>
-                <p className="text-slate-400">Official Commercial Equipment Proforma</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedQuotation(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                ✕
-              </button>
-            </div>
-
+      <Modal
+        isOpen={Boolean(selectedQuotation)}
+        onClose={() => setSelectedQuotation(null)}
+        title={selectedQuotation?.quotation_number}
+        subtitle="Official Commercial Equipment Proforma"
+        maxWidth="max-w-xl"
+      >
+        {selectedQuotation && (
+          <div className="space-y-4 text-xs">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-slate-400 font-semibold">Customer</p>
@@ -327,11 +316,11 @@ export const Quotations = () => {
             {/* Line items */}
             <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
               <table className="w-full text-left">
-                <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-bold text-slate-500">
+                <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-200">
                   <tr>
-                    <th className="p-2">Item Description</th>
-                    <th className="p-2 text-right">Qty</th>
-                    <th className="p-2 text-right">Total (₹)</th>
+                    <th className="p-2 bg-slate-50 dark:bg-slate-800">Item Description</th>
+                    <th className="p-2 bg-slate-50 dark:bg-slate-800 text-right">Qty</th>
+                    <th className="p-2 bg-slate-50 dark:bg-slate-800 text-right">Total (₹)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -377,109 +366,89 @@ export const Quotations = () => {
               ))}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Generate Quotation Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
-            onClick={() => setIsCreateModalOpen(false)}
-          />
-          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden z-10 text-xs p-6 space-y-4 animate-scale-up">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Generate Equipment Quotation
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
-              <div>
-                <SearchableSelect
-                  label="Associate with Customer Lead"
-                  placeholder="Select an active Lead..."
-                  options={leads.map((l) => ({
-                    value: l.id,
-                    label: `${l.lead_code} - ${l.customer_name} (${l.city ? `${l.city}, ` : ""}${l.state})`,
-                  }))}
-                  value={selectedLeadId}
-                  onChange={(val) => {
-                    setSelectedLeadId(val || "");
-                    const match = leads.find((l) => String(l.id) === String(val));
-                    if (match) {
-                      setItemDescription(match.model_name || match.equipment_interest || "");
-                    }
-                  }}
-                  isClearable={false}
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-500 font-semibold mb-1">
-                  Machine Model / Line Item
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Heavy Duty 3DX Backhoe Loader / Excavator"
-                  value={itemDescription}
-                  onChange={(e) => setItemDescription(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-orange-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-500 font-semibold mb-1">Quantity</label>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={itemQty}
-                    onChange={(e) => setItemQty(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-500 font-semibold mb-1">Unit Price (INR Ex-Tax)</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="e.g. 3400000"
-                    value={itemPrice}
-                    onChange={(e) => setItemPrice(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-orange-500"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg text-slate-700 dark:text-slate-300">
-                <p className="font-semibold text-orange-700 dark:text-orange-400">Commercial Summary</p>
-                <p className="mt-1">
-                  Estimated Total: ₹
-                  {((parseFloat(itemPrice) || 0) * (parseInt(itemQty, 10) || 1) * 1.18).toLocaleString("en-IN")}{" "}
-                  (incl. 18% GST)
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold shadow-xs transition-colors cursor-pointer"
-              >
-                Create and Issue Quotation
-              </button>
-            </form>
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Generate Equipment Quotation"
+        subtitle="Create and issue commercial quotation for a customer lead."
+        maxWidth="max-w-lg"
+      >
+        <form onSubmit={handleCreateSubmit} className="space-y-4">
+          <div>
+            <SearchableSelect
+              label="Associate with Customer Lead"
+              placeholder="Select an active Lead..."
+              options={leads.map((l) => ({
+                value: l.id,
+                label: `${l.lead_code} - ${l.customer_name} (${l.city ? `${l.city}, ` : ""}${l.state})`,
+              }))}
+              value={selectedLeadId}
+              onChange={(val) => {
+                setSelectedLeadId(val || "");
+                const match = leads.find((l) => String(l.id) === String(val));
+                if (match) {
+                  setItemDescription(match.model_name || match.equipment_interest || "");
+                }
+              }}
+              isClearable={false}
+            />
           </div>
-        </div>
-      )}
+
+          <Input
+            label="Machine Model / Line Item *"
+            required
+            placeholder="e.g. Heavy Duty 3DX Backhoe Loader / Excavator"
+            value={itemDescription}
+            onChange={(e) => setItemDescription(e.target.value)}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Quantity *"
+              type="number"
+              min={1}
+              required
+              value={itemQty}
+              onChange={(e) => setItemQty(e.target.value)}
+            />
+            <Input
+              label="Unit Price (INR Ex-Tax) *"
+              type="number"
+              required
+              placeholder="e.g. 3400000"
+              value={itemPrice}
+              onChange={(e) => setItemPrice(e.target.value)}
+            />
+          </div>
+
+          <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg text-slate-700 dark:text-slate-300 text-xs">
+            <p className="font-semibold text-orange-700 dark:text-orange-400">Commercial Summary</p>
+            <p className="mt-1">
+              Estimated Total: ₹
+              {((parseFloat(itemPrice) || 0) * (parseInt(itemQty, 10) || 1) * 1.18).toLocaleString("en-IN")}{" "}
+              (incl. 18% GST)
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCreateModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="sm">
+              Create and Issue Quotation
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

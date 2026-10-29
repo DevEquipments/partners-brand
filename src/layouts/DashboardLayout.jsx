@@ -23,8 +23,8 @@ export const DashboardLayout = () => {
         <TopHeader onMenuToggle={() => setIsMobileOpen(true)} />
 
         {/* Workspace body */}
-        <main className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-950 p-4 md:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto w-full space-y-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-100 dark:bg-slate-950 p-4 md:p-6 lg:p-8 min-w-0">
+          <div className="max-w-7xl mx-auto w-full min-w-0 space-y-6">
             <Outlet />
           </div>
         </main>

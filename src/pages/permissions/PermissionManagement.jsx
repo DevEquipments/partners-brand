@@ -188,10 +188,10 @@ export const PermissionManagement = () => {
   ];
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-5 animate-fade-in w-full min-w-0">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
             Permissions
           </h1>
@@ -206,6 +206,7 @@ export const PermissionManagement = () => {
           size="sm"
           onClick={handleOpenAdd}
           icon={Plus}
+          className="shrink-0"
         >
           Add Permission
         </Button>

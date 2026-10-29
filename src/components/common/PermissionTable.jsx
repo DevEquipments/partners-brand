@@ -40,7 +40,7 @@ const resolvePermissionIcon = (slug = "", name = "") => {
  * Clean Permission Assignment List
  *
  * Displays dynamic permission definitions from GET /get-premium-brand-permissions
- * with simple ON/OFF toggle switches.
+ * with simple ON/OFF toggle switches (Enable/Disable).
  */
 export const PermissionTable = ({
   definitions = [],
@@ -98,7 +98,7 @@ export const PermissionTable = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search permissions by name or slug..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-orange-500 focus:bg-white dark:focus:bg-slate-900 transition-colors"
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-orange-500 focus:bg-white dark:focus:bg-slate-900 transition-colors"
           />
         </div>
       )}
@@ -106,7 +106,7 @@ export const PermissionTable = ({
       {/* Permission Assignment Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden shadow-2xs">
         {/* Table Header: Permission | Access */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/80 dark:bg-slate-850/60 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
           <span>Permission</span>
           <span className="w-16 text-right">Access</span>
         </div>
@@ -142,7 +142,7 @@ export const PermissionTable = ({
                   </div>
                 </div>
 
-                {/* Single ON / OFF Toggle */}
+                {/* Single ON / OFF Toggle (Enable / Disable) */}
                 <div className="flex items-center gap-3 shrink-0">
                   <span
                     className={`text-[11px] font-bold select-none w-8 text-right transition-colors ${

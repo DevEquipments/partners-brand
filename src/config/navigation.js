@@ -57,9 +57,13 @@ export const SUPPORTED_DYNAMIC_ROUTES = {
  * @returns {Object|null} Nav item object or null if unmapped
  */
 export const mapDefinitionToNavItem = (def) => {
-  if (!def || !def.slug) return null;
+  if (!def) return null;
 
-  const resolvedModule = resolveSlugToModule(def.slug);
+  const rawString = typeof def === "string" ? def.trim() : "";
+  const slugOrName = rawString || (def.slug || def.name || "").trim();
+  if (!slugOrName) return null;
+
+  const resolvedModule = resolveSlugToModule(slugOrName);
   const routeMeta = SUPPORTED_DYNAMIC_ROUTES[resolvedModule];
 
   // If unknown or unsupported slug (e.g. "Test"), skip safely without crashing
@@ -67,14 +71,18 @@ export const mapDefinitionToNavItem = (def) => {
     return null;
   }
 
+  const label =
+    (typeof def === "string" ? def.trim() : (def.name || "").trim()) ||
+    routeMeta.defaultLabel;
+
   return {
-    id: def.id,
-    label: (def.name || "").trim() || routeMeta.defaultLabel,
+    id: typeof def === "object" ? def.id : slugOrName,
+    label,
     path: routeMeta.path,
     icon: routeMeta.icon || Shield,
     module: resolvedModule,
     permission: routeMeta.permission,
-    slug: def.slug,
+    slug: typeof def === "object" ? def.slug : slugOrName,
   };
 };
 
@@ -88,13 +96,13 @@ export const mapDefinitionToNavItem = (def) => {
  * - CRM: Dynamically loaded from POST /get-premium-brand-permissions
  * - Operations: Sub Admins (/sub-admins), Permissions (/permissions), Profile (/profile)
  *
- * Sub Admin (Untouched):
+ * Sub Admin:
  * - Overview: Dashboard (/dashboard)
- * - CRM: My Leads (/crm/leads), My Enquiries (/crm/enquiries), My Quotes (/crm/quotes), Follow-ups (/crm/follow-ups)
+ * - CRM: Dynamically loaded from POST /sub-admin-sidebar
  * - Settings: Profile (/profile)
  *
  * @param {string} role - "ADMIN" | "SUB_ADMIN"
- * @param {Array<Object>} dynamicDefinitions - Dynamic definitions from POST /get-premium-brand-permissions
+ * @param {Array<Object|string>} dynamicDefinitions - Dynamic definitions or permitted menu strings
  * @returns {Array<Object>} Array of navigation section objects
  */
 export const getNavigationSections = (role = "ADMIN", dynamicDefinitions = []) => {
@@ -147,14 +155,6 @@ export const getNavigationSections = (role = "ADMIN", dynamicDefinitions = []) =
           adminOnly: true,
         },
         {
-          label: "Permissions",
-          path: "/permissions",
-          icon: Shield,
-          module: MODULES.TEAM,
-          permission: PERMISSIONS.SUBADMINS_MANAGE,
-          adminOnly: true,
-        },
-        {
           label: "Profile",
           path: "/profile",
           icon: User,
@@ -167,7 +167,20 @@ export const getNavigationSections = (role = "ADMIN", dynamicDefinitions = []) =
     return sections;
   }
 
-  // Sub Admin Navigation (Untouched, independent of dynamic definitions)
+  // Sub Admin Navigation: CRM section dynamically constructed from sub-admin-sidebar API response
+  const subAdminCrmItems = [];
+  const seenSubAdminPaths = new Set();
+
+  if (Array.isArray(dynamicDefinitions)) {
+    dynamicDefinitions.forEach((item) => {
+      const navItem = mapDefinitionToNavItem(item);
+      if (navItem && !seenSubAdminPaths.has(navItem.path)) {
+        seenSubAdminPaths.add(navItem.path);
+        subAdminCrmItems.push(navItem);
+      }
+    });
+  }
+
   return [
     {
       title: "Overview",
@@ -183,36 +196,7 @@ export const getNavigationSections = (role = "ADMIN", dynamicDefinitions = []) =
     },
     {
       title: "CRM",
-      items: [
-        {
-          label: "My Leads",
-          path: "/crm/leads",
-          icon: Layers,
-          module: MODULES.CRM_LEADS,
-          permission: PERMISSIONS.LEADS_VIEW,
-        },
-        {
-          label: "My Enquiries",
-          path: "/crm/enquiries",
-          icon: MessageSquareText,
-          module: MODULES.CRM_ENQUIRIES,
-          permission: PERMISSIONS.ENQUIRIES_VIEW,
-        },
-        {
-          label: "My Quotes",
-          path: "/crm/quotes",
-          icon: FileSpreadsheet,
-          module: MODULES.CRM_QUOTES,
-          permission: PERMISSIONS.QUOTES_VIEW,
-        },
-        {
-          label: "Follow-ups",
-          path: "/crm/follow-ups",
-          icon: Clock,
-          module: MODULES.CRM_FOLLOWUPS,
-          permission: PERMISSIONS.FOLLOWUPS_VIEW,
-        },
-      ],
+      items: subAdminCrmItems,
     },
     {
       title: "Settings",

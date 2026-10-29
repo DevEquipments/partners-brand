@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EquipmentsDekho Partners Brand CRM — Complete Technical Documentation</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 14mm 18mm 14mm;
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+    line-height: 1.55;
+    font-size: 10.5pt;
+    margin: 0;
+    padding: 0;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+  h1, h2, h3, h4 {
+    color: #0f172a;
+    page-break-after: avoid;
+    font-weight: 700;
+  }
+  h1 { font-size: 20pt; margin-top: 0; margin-bottom: 8pt; line-height: 1.2; }
+  h2 { font-size: 14pt; margin-top: 18pt; margin-bottom: 6pt; border-bottom: 1.5pt solid #ea580c; padding-bottom: 4pt; color: #0f172a; }
+  h3 { font-size: 11.5pt; margin-top: 12pt; margin-bottom: 4pt; color: #ea580c; }
+  h4 { font-size: 10.5pt; margin-top: 8pt; margin-bottom: 2pt; color: #334155; }
+  p { margin-top: 0; margin-bottom: 6pt; }
+  
+  /* Cover Page */
+  .cover-container {
+    height: 95vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30pt 20pt 20pt 20pt;
+    border: 2pt solid #0f172a;
+    border-radius: 8pt;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  }
+  .brand-badge {
+    display: inline-block;
+    background: #ea580c;
+    color: white;
+    font-weight: 800;
+    font-size: 12pt;
+    padding: 6pt 16pt;
+    border-radius: 4pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    width: fit-content;
+  }
+  .cover-title {
+    font-size: 28pt;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.15;
+    margin-top: 20pt;
+    margin-bottom: 12pt;
+  }
+  .cover-subtitle {
+    font-size: 13pt;
+    color: #475569;
+    line-height: 1.5;
+    max-width: 90%;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12pt;
+    background: #f1f5f9;
+    padding: 16pt;
+    border-radius: 6pt;
+    border-left: 4pt solid #ea580c;
+  }
+  .meta-item {
+    font-size: 9.5pt;
+  }
+  .meta-label {
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    font-size: 8pt;
+    display: block;
+    margin-bottom: 2pt;
+  }
+  .meta-value {
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  /* Table of Contents */
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 10pt 0;
+  }
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4pt 0;
+    border-bottom: 1px dotted #cbd5e1;
+    font-size: 10pt;
+  }
+  .toc-title { font-weight: 600; color: #1e293b; }
+  .toc-page { font-weight: 700; color: #ea580c; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8pt 0 12pt 0;
+    font-size: 8.5pt;
+  }
+  th {
+    background: #0f172a;
+    color: #ffffff;
+    text-align: left;
+    padding: 5pt 7pt;
+    font-weight: 600;
+    border: 1px solid #0f172a;
+  }
+  td {
+    padding: 4.5pt 7pt;
+    border: 1px solid #cbd5e1;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  /* Code & Pre */
+  code {
+    font-family: Consolas, "Courier New", monospace;
+    background: #f1f5f9;
+    color: #b91c1c;
+    padding: 1pt 3pt;
+    border-radius: 3pt;
+    font-size: 8.5pt;
+  }
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 8pt 10pt;
+    border-radius: 4pt;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 8pt;
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    margin: 6pt 0 10pt 0;
+    line-height: 1.4;
+  }
+
+  /* Callout boxes */
+  .callout {
+    background: #fff7ed;
+    border-left: 3pt solid #ea580c;
+    padding: 8pt 10pt;
+    border-radius: 0 4pt 4pt 0;
+    margin: 8pt 0;
+    font-size: 9pt;
+  }
+  .callout-title {
+    font-weight: 700;
+    color: #9a3412;
+    margin-bottom: 2pt;
+    text-transform: uppercase;
+    font-size: 8pt;
+  }
+  .callout-info {
+    background: #f0fdf4;
+    border-left-color: #16a34a;
+  }
+  .callout-info .callout-title { color: #166534; }
+
+  .badge {
+    display: inline-block;
+    padding: 1.5pt 5pt;
+    border-radius: 3pt;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge-admin { background: #dbeafe; color: #1e40af; }
+  .badge-subadmin { background: #fef3c7; color: #92400e; }
+  .badge-post { background: #dcfce7; color: #15803d; }
+  .badge-multipart { background: #ede9fe; color: #6b21a8; }
+
+  /* Diagram Cards */
+  .diagram-box {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6pt;
+    padding: 10pt;
+    margin: 10pt 0;
+    font-size: 8.5pt;
+  }
+  .flow-step {
+    background: white;
+    border: 1px solid #94a3b8;
+    border-radius: 4pt;
+    padding: 6pt 8pt;
+    margin-bottom: 6pt;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .flow-step-header {
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2pt;
+  }
+  .flow-step-desc {
+    color: #475569;
+    font-size: 8pt;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: #ea580c;
+    font-weight: 900;
+    margin: 2pt 0;
+    font-size: 11pt;
+  }
+  .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5pt;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 4pt;
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER PAGE ================= -->
+<div class="cover-container">
+  <div>
+    <div class="brand-badge">EquipmentsDekho Ecosystem</div>
+    <div class="cover-title">Partners Brand CRM<br>System Architecture &amp; Technical Manual</div>
+    <div class="cover-subtitle">
+      Comprehensive human-written technical reference for the enterprise B2B partner operations platform, multi-tenant RBAC, geographic territory routing, dynamic permissions engine, and API integration architecture.
+    </div>
+  </div>
+
+  <div class="meta-grid">
+    <div class="meta-item">
+      <span class="meta-label">Application Name</span>
+      <span class="meta-value">partners-brand (Vite + React 19)</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">System Architecture</span>
+      <span class="meta-value">Single Page Application (SPA) REST Client</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Core Target Users</span>
+      <span class="meta-value">Brand Principals (Admin) &amp; Regional Executives (Sub-Admins)</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Backend API Base</span>
+      <span class="meta-value">https://partners.equipmentsdekho.com/apis/api</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Release Version</span>
+      <span class="meta-value">1.0.0 (Production Verified)</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Document Date</span>
+      <span class="meta-value">October 2026</span>
+    </div>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ================= TABLE OF CONTENTS ================= -->
+<h2>Table of Contents</h2>
+<ul class="toc-list">
+  <li class="toc-item"><span class="toc-title">1. Executive Summary &amp; Business Objectives</span><span class="toc-page">Page 3</span></li>
+  <li class="toc-item"><span class="toc-title">2. High-Level System Architecture</span><span class="toc-page">Page 3</span></li>
+  <li class="toc-item"><span class="toc-title">3. Technology Stack &amp; Complete Dependency Matrix</span><span class="toc-page">Page 4</span></li>
+  <li class="toc-item"><span class="toc-title">4. Complete Project Directory Hierarchy &amp; Code Anatomy</span><span class="toc-page">Page 5</span></li>
+  <li class="toc-item"><span class="toc-title">5. Authentication, Session &amp; Security Architecture</span><span class="toc-page">Page 7</span></li>
+  <li class="toc-item"><span class="toc-title">6. Multi-Tenant Role-Based Access Control (RBAC) System</span><span class="toc-page">Page 8</span></li>
+  <li class="toc-item"><span class="toc-title">7. Dynamic Navigation &amp; Route Guard Engine</span><span class="toc-page">Page 9</span></li>
+  <li class="toc-item"><span class="toc-title">8. CRM Operations Engine &amp; Business Workflows</span><span class="toc-page">Page 10</span></li>
+  <li class="toc-item"><span class="toc-title">9. Geographic Territory Management &amp; Workload Auto-Assignment Engine</span><span class="toc-page">Page 12</span></li>
+  <li class="toc-item"><span class="toc-title">10. Sub-Admin Operations &amp; Dynamic Permission Configuration Matrix</span><span class="toc-page">Page 13</span></li>
+  <li class="toc-item"><span class="toc-title">11. API Integration Layer &amp; Complete Network Specification</span><span class="toc-page">Page 14</span></li>
+  <li class="toc-item"><span class="toc-title">12. State Management Architecture &amp; React Contexts</span><span class="toc-page">Page 16</span></li>
+  <li class="toc-item"><span class="toc-title">13. UI/UX Design System &amp; Common Component Library</span><span class="toc-page">Page 17</span></li>
+  <li class="toc-item"><span class="toc-title">14. End-to-End Sequence &amp; Data Flow Diagrams</span><span class="toc-page">Page 18</span></li>
+  <li class="toc-item"><span class="toc-title">15. Environment Setup, Local Development &amp; Build Verification</span><span class="toc-page">Page 19</span></li>
+  <li class="toc-item"><span class="toc-title">16. Production Deployment &amp; Optimization Recommendations</span><span class="toc-page">Page 20</span></li>
+</ul>
+
+<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16pt 0;">
+
+<!-- ================= SECTION 1 ================= -->
+<h2>1. Executive Summary &amp; Business Objectives</h2>
+<p>
+  The <strong>EquipmentsDekho Partners Brand Portal</strong> is a specialized enterprise SaaS platform built for industrial machinery manufacturers, brand principals, and authorized equipment distribution networks across India.
+</p>
+<p>
+  In the heavy machinery marketplace, buyers require high-touch sales interactions, technical specifications, and official quotation dispatches. This platform enables brand partners to ingest high-intent buyer inquiries in real time, route them instantly to field sales operators based on geographic territory boundaries, and manage the complete sales lifecycle from first customer inquiry to deal closure.
+</p>
+
+<h3>Key Business Drivers:</h3>
+<ul>
+  <li><strong>Instant Inbound Demand Ingestion:</strong> Captures equipment inquiries and quotation requests directly from the EquipmentsDekho marketplace without manual re-entry.</li>
+  <li><strong>Territory Integrity:</strong> Strict boundary enforcement ensures regional dealers and field operators only access leads originating in their assigned states and cities.</li>
+  <li><strong>Server-Driven Dynamic Capabilities:</strong> Menus, permissions, and module views are not hardcoded on the client; they adapt dynamically based on server-side permission contracts.</li>
+  <li><strong>Workload-Balanced Auto-Routing:</strong> Prevents sales burnout and lead stagnation by routing unassigned leads to qualified Sub-Admins with the lowest open deal burden.</li>
+  <li><strong>Tamper-Resistant Audit Trail:</strong> Every call, note, meeting, quotation dispatch, and assignment override is preserved in an immutable chronological timeline.</li>
+</ul>
+
+<!-- ================= SECTION 2 ================= -->
+<h2>2. High-Level System Architecture</h2>
+<p>
+  The system utilizes a modern <strong>Decoupled Single Page Application (SPA) Architecture</strong> built on React 19, powered by Vite 8, and styled with Tailwind CSS v4. The client communicates with the EquipmentsDekho RESTful backend services using Bearer token-authenticated HTTP requests.
+</p>
+
+<div class="diagram-box avoid-break">
+  <div style="font-weight: 700; color: #ea580c; margin-bottom: 8pt; text-transform: uppercase; font-size: 8.5pt;">Architectural Block Representation</div>
+  <table style="margin: 0; font-size: 8pt;">
+    <tr>
+      <th style="width: 25%;">Presentation Layer</th>
+      <th style="width: 25%;">Control &amp; State Layer</th>
+      <th style="width: 25%;">Data Access Layer</th>
+      <th style="width: 25%;">External Infrastructure</th>
+    </tr>
+    <tr>
+      <td>
+        <strong>React 19 Components</strong><br>
+        - Responsive Layouts<br>
+        - DataTable &amp; Filters<br>
+        - Lead Drawer &amp; Timeline<br>
+        - Modals &amp; Skeletons<br>
+        - Tailwind CSS v4 Themes
+      </td>
+      <td>
+        <strong>Context State Engine</strong><br>
+        - AuthContext (Session)<br>
+        - PermissionContext (RBAC)<br>
+        - CRMContext (Pipeline)<br>
+        - ThemeContext (Dark/Light)<br>
+        - React Router v7 Guards
+      </td>
+      <td>
+        <strong>Services &amp; Repositories</strong><br>
+        - authApi, inquiryApi<br>
+        - productQuotation<br>
+        - subAdminService<br>
+        - crmRepository (Cache)<br>
+        - Axios HTTP Client
+      </td>
+      <td>
+        <strong>EquipmentsDekho Backend</strong><br>
+        - RESTful API Services<br>
+        - JWT Authentication<br>
+        - Lead Ingestion Engine<br>
+        - Multipart Uploads<br>
+        - Production Database
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ================= SECTION 3 ================= -->
+<h2>3. Technology Stack &amp; Complete Dependency Matrix</h2>
+<p>
+  Every package in the application has been chosen for high performance, tree-shaking capability, and minimal runtime overhead. Below is the production dependency specification:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dependency Name</th>
+      <th>Version</th>
+      <th>Category</th>
+      <th>Technical Rationale &amp; Responsibility</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>react</code></td>
+      <td>19.2.6</td>
+      <td>Core Framework</td>
+      <td>Latest React runtime utilizing Concurrent Mode, optimized reconciler, and modern state hooks.</td>
+    </tr>
+    <tr>
+      <td><code>react-dom</code></td>
+      <td>19.2.6</td>
+      <td>Rendering Target</td>
+      <td>DOM renderer for React 19 web applications.</td>
+    </tr>
+    <tr>
+      <td><code>vite</code></td>
+      <td>8.0.12</td>
+      <td>Build &amp; Bundler</td>
+      <td>ESM development server with instantaneous HMR and Rollup production compilation.</td>
+    </tr>
+    <tr>
+      <td><code>tailwindcss</code></td>
+      <td>4.3.1</td>
+      <td>Styling Engine</td>
+      <td>Next-generation utility-first CSS engine integrated via <code>@tailwindcss/vite</code>.</td>
+    </tr>
+    <tr>
+      <td><code>react-router-dom</code></td>
+      <td>7.18.0</td>
+      <td>Routing Engine</td>
+      <td>Declarative client-side routing, nested layout outlets, and search param synchronization.</td>
+    </tr>
+    <tr>
+      <td><code>axios</code></td>
+      <td>1.18.0</td>
+      <td>Network Client</td>
+      <td>Promise-based HTTP client equipped with request authorization and response error interceptors.</td>
+    </tr>
+    <tr>
+      <td><code>react-hook-form</code></td>
+      <td>7.79.0</td>
+      <td>Form Handling</td>
+      <td>Uncontrolled form state management ensuring sub-millisecond input performance.</td>
+    </tr>
+    <tr>
+      <td><code>react-hot-toast</code></td>
+      <td>2.6.0</td>
+      <td>Notifications</td>
+      <td>Lightweight toast notifications featuring programmatic dismissal and deduplicated IDs.</td>
+    </tr>
+    <tr>
+      <td><code>lucide-react</code></td>
+      <td>1.21.0</td>
+      <td>Iconography</td>
+      <td>Complete SVG icon library maintaining consistent design across light and dark themes.</td>
+    </tr>
+    <tr>
+      <td><code>react-select</code></td>
+      <td>5.10.2</td>
+      <td>Select UI</td>
+      <td>Accessible searchable select and multi-select components for territory configuration.</td>
+    </tr>
+    <tr>
+      <td><code>dotenv</code></td>
+      <td>17.4.2</td>
+      <td>Configuration</td>
+      <td>Environment variable resolution supporting cross-environment deployment parameters.</td>
+    </tr>
+    <tr>
+      <td><code>eslint</code></td>
+      <td>10.3.0</td>
+      <td>Code Quality</td>
+      <td>Static code analysis enforcing React hooks rules and clean ES module conventions.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ================= SECTION 4 ================= -->
+<h2>4. Complete Project Directory Hierarchy &amp; Code Anatomy</h2>
+<p>
+  The codebase follows a modular, feature-oriented structure with clean boundaries between UI components, business logic services, data access repositories, and configuration rules:
+</p>
+
+<pre>
+partners-brand/
+├── .env                              # Base API environment configuration
+├── .gitignore                        # Git exclusion rules
+├── eslint.config.js                  # ESLint flat configuration
+├── index.html                        # Application entry HTML container
+├── package.json                      # Project dependencies, scripts, and engine metadata
+├── tailwind.config.js                # Tailwind styling themes, fonts, and animation extensions
+├── vite.config.js                    # Vite bundler, React plugin & Tailwind Vite plugin
+└── src/
+    ├── main.jsx                      # React 19 root bootstrap
+    ├── App.jsx                       # Master Application component, provider composition & Toast config
+    ├── index.css                     # Global Tailwind stylesheets and font definitions
+    │
+    ├── api/                          # HTTP Communication Engine
+    │   ├── axios.js                  # Axios instance with request/response interceptors & auto-refresh/401 redirect
+    │   └── apiRequest.js             # Resilient wrapper normalizing promises, payload parsing & error formats
+    │
+    ├── endPoints/                    # Network Configuration
+    │   └── APIEndpoints.js           # Declarative mapping of backend API endpoints and HTTP methods
+    │
+    ├── services/                     # Business Logic & Backend Service Integrations
+    │   ├── authApi.js                # Login, registration, profile fetch, and session logout
+    │   ├── dashboardApi.js           # Real-time dashboard KPI metrics and activity counters
+    │   ├── inquiryApi.js             # Customer inquiries pagination and retrieval
+    │   ├── productQuotation.js       # Feature equipment quote requests
+    │   ├── profile.js                # Brand profile update service (multipart/form-data)
+    │   ├── premiumBrands.js          # Brand catalogue services
+    │   ├── subAdminService.js        # Sub-Admin retrieval, role mapping, and normalization
+    │   ├── subAdminPermissionService.js # Role permission assignment (POST /add-premium-brand-role-permission)
+    │   ├── permissionManagementService.js # Permission definitions registry (create/edit/list)
+    │   └── subAdminSidebarService.js # Sub-Admin permitted sidebar dynamic loader (POST /sub-admin-sidebar)
+    │
+    ├── repositories/                 # Data Access Layer & Abstraction
+    │   ├── subAdminRepository.js     # API transport layer for Sub-Admin queries
+    │   ├── subAdminPermissionRepository.js # API transport for permissions assignment
+    │   ├── permissionManagementRepository.js # API transport for permission definitions
+    │   └── local/                    # Local storage repository & memory mock cache
+    │       └── crmRepository.js      # CRUD repository for Leads, Quotations, Customers, Activities & Team
+    │
+    ├── context/                      # React Context State Providers
+    │   ├── AuthContext.jsx           # Global authentication state, JWT storage, role normalization & session check
+    │   ├── PermissionContext.jsx     # Dynamic permissions loader for Admin and Sub-Admin roles
+    │   ├── CRMContext.jsx            # Lead lifecycle state, territory visibility filter, auto-assigner, activities
+    │   └── ThemeContext.jsx          # Dark / Light theme persistence and HTML class synchronizer
+    │
+    ├── hooks/                        # Custom Reusable React Hooks
+    │   ├── useBrand.js               # Convenience hook extracting brand ID, brand name, and metadata
+    │   ├── useDataTable.js           # Sorting, pagination, and multi-field search for tabular views
+    │   ├── usePermissions.js         # Permission evaluations, module access checks, and territory validation
+    │   ├── useSubAdmins.js           # Data-fetching hook managing Sub-Admin lists, loading, and error states
+    │   └── useSubAdminPermissions.js # Sub-Admin permission assignment state, dirty checking & submit handler
+    │
+    ├── routes/                       # Routing Configuration
+    │   └── AppRoutes.jsx             # Complete route hierarchy, public/private gates, backward-compatibility redirects
+    │
+    ├── layouts/                      # Layout Templates
+    │   └── DashboardLayout.jsx       # Persistent responsive frame: Sidebar, TopHeader, and content Outlet
+    │
+    ├── components/                   # UI Component Ecosystem
+    │   ├── common/                   # 30+ Atomic & Molecular Design System Components
+    │   ├── crm/                      # LeadDetail, ActivityTimeline, AssignmentSelector, TerritorySelector
+    │   ├── guards/                   # PrivateRoute, PublicRoute, PermissionRoute, PermissionGate
+    │   ├── layout/                   # Sidebar, TopHeader, ThemeToggle, UserMenu
+    │   └── permissions/              # PermissionFormModal (dynamic definition add/edit)
+    │
+    ├── pages/                        # View Pages & Route Containers
+    │   ├── Dashboard.jsx             # Executive KPI analytics dashboard
+    │   ├── CustomerEnquiry.jsx       # Inbound customer equipment inquiries table with drawer & CSV export
+    │   ├── FeatureEquipmentQuotes.jsx# Product-specific quotation request registry with pipeline enrichments
+    │   ├── Profile.jsx               # Brand Partner profile view and edit modal (multipart update)
+    │   ├── crm/                      # AllLeads.jsx, FollowUps.jsx
+    │   ├── permissions/              # PermissionManagement.jsx
+    │   ├── reports/                  # CRMReports.jsx
+    │   └── subadmins/                # SubAdmins.jsx, SubAdminDetail.jsx, SubAdminPermissions.jsx
+    │
+    └── utils/                        # Pure Helper Functions & Algorithms
+        ├── accessRules.js            # Territory match evaluation, record view/update check & eligibility engine
+        ├── permissionResolver.js     # Slug-to-module and slug-to-actions normalizer
+        ├── roleUtils.js              # Strict user_type normalizer (ADMIN | SUB_ADMIN | null)
+        └── errorHandler.js           # API error payload parser extracting validation messages
+</pre>
+
+<div class="page-break"></div>
+
+<!-- ================= SECTION 5 ================= -->
+<h2>5. Authentication, Session &amp; Security Architecture</h2>
+<p>
+  Authentication is managed through a centralized state provider in <code>AuthContext.jsx</code>, interacting directly with <code>authApi.js</code> and the Axios network interceptor layer.
+</p>
+
+<h3>5.1 Authentication Flow:</h3>
+<div class="diagram-box avoid-break">
+  <div class="flow-step">
+    <div class="flow-step-header"><span>Step 1: Credential Submission</span><span class="badge badge-post">POST</span></div>
+    <div class="flow-step-desc">User submits username and password via <code>Login.jsx</code> to endpoint <code>/premium-brand-login</code>.</div>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-step">
+    <div class="flow-step-header"><span>Step 2: Token Issuance &amp; Role Normalization</span><span class="badge badge-admin">SECURITY</span></div>
+    <div class="flow-step-desc">Backend responds with JWT token and user record. <code>roleUtils.normalizeUserType()</code> validates <code>user_type</code>. Unknown roles are immediately rejected.</div>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-step">
+    <div class="flow-step-header"><span>Step 3: Storage &amp; Interceptor Injection</span><span class="badge badge-subadmin">STORAGE</span></div>
+    <div class="flow-step-desc">Token is stored in <code>localStorage</code>. The Axios request interceptor attaches <code>Authorization: Bearer &lt;token&gt;</code> to all subsequent requests.</div>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-step">
+    <div class="flow-step-header"><span>Step 4: Startup Session Validation &amp; 401 Guard</span><span class="badge badge-post">VALIDATION</span></div>
+    <div class="flow-step-desc">On page reload, <code>fetchProfile()</code> calls <code>POST /profile</code>. Any 401 response wipes credentials and forces redirection to <code>/login</code> without infinite reload loops.</div>
+  </div>
+</div>
+
+<div class="callout callout-info">
+  <div class="callout-title">Critical Security Implementation Rule</div>
+  The application <strong>strictly refuses</strong> to default missing or malformed user roles to Admin. If a user record lacks an explicit <code>user_type: "admin"</code> or <code>"sub_admin"</code>, the normalized role evaluates to <code>null</code>, and protected route access is immediately blocked.
+</div>
+
+<!-- ================= SECTION 6 ================= -->
+<h2>6. Multi-Tenant Role-Based Access Control (RBAC) System</h2>
+<p>
+  The system enforces strict operational separation between two fundamental roles:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 20%;">Dimension</th>
+      <th style="width: 40%;">Brand Admin (Principal)</th>
+      <th style="width: 40%;">Sub-Admin (Regional Operator)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Geographic Scope</strong></td>
+      <td>All Indian States &amp; Cities (Nationwide visibility).</td>
+      <td>Strictly restricted to assigned States &amp; Cities.</td>
+    </tr>
+    <tr>
+      <td><strong>Navigation Menus</strong></td>
+      <td>Loads dynamic CRM modules plus full Operations suite (Sub-Admins, Permissions, Reports).</td>
+      <td>Dynamically resolved strictly from <code>POST /sub-admin-sidebar</code> response.</td>
+    </tr>
+    <tr>
+      <td><strong>Team Management</strong></td>
+      <td>Can create, edit, activate/deactivate Sub-Admins, and configure their permission matrix.</td>
+      <td>Zero access to team management pages.</td>
+    </tr>
+    <tr>
+      <td><strong>Lead Assignment</strong></td>
+      <td>Can assign to any operator, trigger auto-assignment, or confirm out-of-territory overrides.</td>
+      <td>Can only manage leads assigned to them or within their territory boundaries.</td>
+    </tr>
+    <tr>
+      <td><strong>Reporting &amp; Analytics</strong></td>
+      <td>Full access to state-wise demand distribution and operator conversion metrics.</td>
+      <td>No access to executive reporting suite.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ================= SECTION 7 ================= -->
+<h2>7. Dynamic Navigation &amp; Route Guard Engine</h2>
+<p>
+  Instead of hardcoding client-side routes, navigation items are built dynamically from server responses:
+</p>
+
+<h3>7.1 Slug-to-Module Resolution Engine (<code>permissionResolver.js</code>)</h3>
+<p>
+  The backend sends permission tags as human titles or slugs (e.g. <code>"Customer Enquiry"</code>, <code>"quotes_enquiry"</code>, <code>"Leads"</code>). The resolver normalizes these strings to prevent breakage from backend naming variations:
+</p>
+
+<pre>
+export const resolveSlugToModule = (slug = "") => {
+  if (!slug) return null;
+  const clean = String(slug).trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  if (clean.includes("enquir") || clean.includes("inquir")) return MODULES.CRM_ENQUIRIES;
+  if (clean.includes("quote")  || clean.includes("quotation")) return MODULES.CRM_QUOTES;
+  if (clean.includes("lead")) return MODULES.CRM_LEADS;
+  if (clean.includes("followup") || clean.includes("follow")) return MODULES.CRM_FOLLOWUPS;
+  if (clean.includes("report")) return MODULES.REPORTS;
+  if (clean.includes("profile")) return MODULES.PROFILE;
+  if (clean.includes("dashboard")) return MODULES.DASHBOARD;
+
+  return slug;
+};
+</pre>
+
+<h3>7.2 Route Protection Guards</h3>
+<ul>
+  <li><code>PrivateRoute</code>: Ensures a valid token and recognized role exist in session. If absent, redirects to <code>/login</code>.</li>
+  <li><code>PublicRoute</code>: Prevents authenticated users from seeing guest pages (redirects to <code>/dashboard</code>).</li>
+  <li><code>PermissionRoute</code>: Evaluates if the authenticated user possesses the specific module permission. Supports an <code>adminOnly</code> prop that immediately blocks Sub-Admins.</li>
+  <li><code>PermissionGate</code>: In-component conditional wrapper that renders buttons or actions only if the user has granular action permissions (e.g. <code>quotes:export</code>).</li>
+</ul>
+
+<!-- ================= SECTION 8 ================= -->
+<h2>8. CRM Operations Engine &amp; Business Workflows</h2>
+
+<h3>8.1 Leads Management &amp; Unified Pipeline (<code>AllLeads.jsx</code>)</h3>
+<p>
+  The master leads register aggregates all prospective equipment buyers into a high-performance interactive table:
+</p>
+<ul>
+  <li><strong>Tabs:</strong> <em>All Leads</em> (complete visible dataset), <em>Unassigned Leads</em> (inbound queue requiring action), and <em>My Leads</em> (leads assigned to the logged-in operator).</li>
+  <li><strong>Multi-Field Search:</strong> Real-time filtering across customer name, phone, lead code, machine interest, city, and state.</li>
+  <li><strong>Status Filters:</strong> Filters across standardized statuses: <code>New</code>, <code>Assigned</code>, <code>Contacted</code>, <code>Follow-up</code>, <code>Quote Sent</code>, <code>Won</code>, and <code>Lost</code>.</li>
+  <li><strong>Exporting:</strong> Instant client-side CSV generation matching active query filters.</li>
+</ul>
+
+<h3>8.2 Customer Enquiries Workflow (<code>CustomerEnquiry.jsx</code>)</h3>
+<p>
+  Direct integration with <code>POST /premium-brand-quotes-enquiry</code>. Features pagination controls, quick phone-calling triggers (<code>tel:</code>), and one-click lead drawer inspection.
+</p>
+
+<h3>8.3 Feature Equipment Quotation Requests (<code>FeatureEquipmentQuotes.jsx</code>)</h3>
+<p>
+  Direct integration with <code>POST /get-feature-equipment-quotes</code>. Enriches product-specific quotation requests with CRM deal stages and pricing discussions.
+</p>
+
+<h3>8.4 360° Lead Detail Drawer (<code>LeadDetail.jsx</code>)</h3>
+<p>
+  Sliding off-canvas drawer that presents an operational cockpit for any lead:
+</p>
+<ul>
+  <li><strong>Activity Timeline:</strong> Chronological history displaying calls, emails, notes, meetings, and stage changes.</li>
+  <li><strong>Customer History:</strong> Lifetime value and past inquiries associated with the customer's phone number.</li>
+  <li><strong>Log Activity Tab:</strong> Instant form to log call notes, meeting summaries, or internal remarks.</li>
+  <li><strong>Schedule Follow-Up Tab:</strong> Date and time scheduler that automatically populates the <code>FollowUps.jsx</code> pipeline.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ================= SECTION 9 ================= -->
+<h2>9. Geographic Territory Management &amp; Workload Auto-Assignment Engine</h2>
+<p>
+  Lead routing is governed by an automated, workload-aware decision engine implemented in <code>utils/accessRules.js</code>:
+</p>
+
+<div class="diagram-box avoid-break">
+  <div style="font-weight: 700; color: #ea580c; margin-bottom: 6pt; text-transform: uppercase; font-size: 8.5pt;">Auto-Assignment Logic Flow</div>
+  <div class="flow-step">
+    <strong>1. Extract Lead Location:</strong> Identify the target <code>state</code> and <code>city</code> from inbound inquiry data.
+  </div>
+  <div class="flow-step">
+    <strong>2. Query Candidate Pool:</strong> Scan all Sub-Admins in the current brand account.
+  </div>
+  <div class="flow-step">
+    <strong>3. Evaluate Operational Eligibility:</strong> Candidate must meet three conditions:
+    <br>&bull; Account status is <code>active</code>
+    <br>&bull; Has view AND update permissions for this CRM type (e.g. <code>leads:view</code> + <code>leads:update</code>)
+    <br>&bull; Territory coverage: Operator's assigned territory state matches lead state, AND (cities include <code>"ALL"</code> OR lead city).
+  </div>
+  <div class="flow-step">
+    <strong>4. Workload Balancing Calculation:</strong> For all eligible candidates, compute active open burden:
+    <pre style="margin: 4pt 0; padding: 4pt 6pt;">openCount = leads.filter(l => l.assigned_to === member.id &amp;&amp; l.status !== "won" &amp;&amp; l.status !== "lost").length</pre>
+  </div>
+  <div class="flow-step">
+    <strong>5. Final Execution:</strong> Automatically assign the lead to the operator with the minimum active count. Record the automated routing decision in the lead activity timeline.
+  </div>
+</div>
+
+<h3>Admin Manual Territory Override</h3>
+<p>
+  If a Brand Admin manually assigns a lead to an operator whose territories do not cover the lead's state/city, the system displays an <strong>Override Confirmation Dialog</strong>. Upon confirmation, the assignment proceeds and is logged with a permanent audit record:
+</p>
+<div class="callout">
+  <em>"Admin territory override assignment by [Admin Name]. Reason: Out-of-territory manual assignment override confirmed."</em>
+</div>
+
+<!-- ================= SECTION 10 ================= -->
+<h2>10. Sub-Admin Operations &amp; Dynamic Permission Configuration Matrix</h2>
+<p>
+  Brand Admins have granular control over operator accounts and access levels (<code>src/pages/subadmins/</code>):
+</p>
+<ul>
+  <li><strong>Roster View:</strong> Instant search across operator username, email, phone, company, and GST.</li>
+  <li><strong>Account Lifecycle:</strong> Activation toggle to suspend or restore operator access instantly.</li>
+  <li><strong>Dynamic Permission Matrix (<code>SubAdminPermissions.jsx</code>):</strong> Pulls live permission types from <code>POST /get-premium-brand-permissions</code> and allows toggling capabilities per operator.</li>
+  <li><strong>Submission Payload:</strong> When saved, it formats selected permissions into a canonical name array:</li>
+</ul>
+
+<pre>
+// POST /add-premium-brand-role-permission
+{
+  "role_id": "14",
+  "permission_name": [
+    "Customer Enquiry",
+    "Quotes",
+    "Leads",
+    "Follow-ups"
+  ]
+}
+</pre>
+
+<div class="page-break"></div>
+
+<!-- ================= SECTION 11 ================= -->
+<h2>11. API Integration Layer &amp; Complete Network Specification</h2>
+<p>
+  All network communication is centralized through <code>src/endPoints/APIEndpoints.js</code> and executed via the custom Axios instance in <code>src/api/axios.js</code>.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Endpoint Constant</th>
+      <th>Relative URL</th>
+      <th>Method</th>
+      <th>Content-Type</th>
+      <th>Functional Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>login</code></td>
+      <td><code>/premium-brand-login</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td>application/json</td>
+      <td>Authenticates brand principal or sub-admin. Returns JWT &amp; profile.</td>
+    </tr>
+    <tr>
+      <td><code>register</code></td>
+      <td><code>/premium-brand-register</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td><span class="badge badge-multipart">Multipart</span></td>
+      <td>Registers brand partner with company, phone, GST, and address.</td>
+    </tr>
+    <tr>
+      <td><code>profile</code></td>
+      <td><code>/profile</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td>application/json</td>
+      <td>Retrieves authenticated user profile and account details.</td>
+    </tr>
+    <tr>
+      <td><code>logout</code></td>
+      <td><code>/logout</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td>application/json</td>
+      <td>Revokes active session on the backend.</td>
+    </tr>
+    <tr>
+      <td><code>premiumBrandQuotesEnquiry</code></td>
+      <td><code>/premium-brand-quotes-enquiry</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td><span class="badge badge-multipart">Multipart</span></td>
+      <td>Fetches paginated customer equipment inquiries for current brand.</td>
+    </tr>
+    <tr>
+      <td><code>getFeatureEquipmentQuotes</code></td>
+      <td><code>/get-feature-equipment-quotes</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td><span class="badge badge-multipart">Multipart</span></td>
+      <td>Retrieves equipment quotation requests and pricing inquiries.</td>
+    </tr>
+    <tr>
+      <td><code>update_Profile</code></td>
+      <td><code>/update-profile</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td><span class="badge badge-multipart">Multipart</span></td>
+      <td>Updates brand partner company profile, phone, GST, and address.</td>
+    </tr>
+    <tr>
+      <td><code>getDashboardData</code></td>
+      <td><code>/get-dashboard-data</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td><span class="badge badge-multipart">Multipart</span></td>
+      <td>Fetches dashboard counts, active metrics, and recent inquiries.</td>
+    </tr>
+    <tr>
+      <td><code>getSubAdmins</code></td>
+      <td><code>/get-subadmins</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td>application/json</td>
+      <td>Returns all Sub-Admins registered under the authenticated brand.</td>
+    </tr>
+    <tr>
+      <td><code>getPremiumBrandPermissions</code></td>
+      <td><code>/get-premium-brand-permissions</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td>application/json</td>
+      <td>Retrieves dynamic permission definitions list from server.</td>
+    </tr>
+    <tr>
+      <td><code>addPremiumBrandPermission</code></td>
+      <td><code>/premium-brand-add-permission</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td>application/json</td>
+      <td>Creates a new system permission definition.</td>
+    </tr>
+    <tr>
+      <td><code>editPremiumBrandPermission</code></td>
+      <td><code>/premium-brand-edit-permission</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td>application/json</td>
+      <td>Updates an existing permission definition name and slug.</td>
+    </tr>
+    <tr>
+      <td><code>addPremiumBrandRolePermission</code></td>
+      <td><code>/add-premium-brand-role-permission</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td>application/json</td>
+      <td>Assigns permitted permission names list to a Sub-Admin role ID.</td>
+    </tr>
+    <tr>
+      <td><code>subAdminSidebar</code></td>
+      <td><code>/sub-admin-sidebar</code></td>
+      <td><span class="badge badge-post">POST</span></td>
+      <td>application/json</td>
+      <td>Returns permitted sidebar menu strings for Sub-Admin role ID.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Global Error Handling &amp; Toast Deduplication (<code>axios.js</code>)</h3>
+<p>
+  The response interceptor formats errors and deduplicates toasts using message hashes:
+</p>
+<ul>
+  <li><code>HTTP 401 Unauthorized:</code> Clears localStorage session, triggers toast <em>"Session expired"</em>, and forces redirect to <code>/login</code>.</li>
+  <li><code>HTTP 403 Forbidden:</code> Displays <em>"You are not authorized"</em> alert.</li>
+  <li><code>HTTP 422 Validation Error:</code> Parses nested <code>errors</code> payload and displays the first field validation error message.</li>
+  <li><code>HTTP 500+ Server Error:</code> Displays graceful server error notice without crashing client components.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ================= SECTION 12 ================= -->
+<h2>12. State Management Architecture &amp; React Contexts</h2>
+<p>
+  State is structured into four focused contexts composed cleanly in <code>src/App.jsx</code>:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Context Provider</th>
+      <th>Key State Variables</th>
+      <th>Exposed Methods &amp; Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ThemeContext</code></td>
+      <td><code>theme</code> (<code>"dark"</code> | <code>"light"</code>)</td>
+      <td><code>toggleTheme()</code>, <code>setTheme()</code>. Persists to <code>localStorage</code> and toggles HTML root class.</td>
+    </tr>
+    <tr>
+      <td><code>AuthContext</code></td>
+      <td><code>token</code>, <code>user</code>, <code>role</code>, <code>isAdmin</code>, <code>isSubAdmin</code>, <code>isAuthenticated</code>, <code>loading</code></td>
+      <td><code>login(token, user, role)</code>, <code>logout()</code>, <code>fetchProfile()</code>. Normalizes roles safely.</td>
+    </tr>
+    <tr>
+      <td><code>PermissionContext</code></td>
+      <td><code>adminPermissionDefinitions</code>, <code>subAdminSidebarItems</code>, loading and error states</td>
+      <td><code>refreshAdminPermissions()</code>, <code>refreshSubAdminSidebar()</code>. Powers dynamic navigation.</td>
+    </tr>
+    <tr>
+      <td><code>CRMContext</code></td>
+      <td><code>leads</code>, <code>unassignedLeads</code>, <code>quotations</code>, <code>teamMembers</code>, <code>customers</code>, <code>loading</code></td>
+      <td><code>assignLead()</code>, <code>autoAssignLead()</code>, <code>updateLeadStatus()</code>, <code>scheduleFollowup()</code>, <code>logActivity()</code>, <code>createQuotation()</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ================= SECTION 13 ================= -->
+<h2>13. UI/UX Design System &amp; Common Component Library</h2>
+<p>
+  Over 30 atomic and molecular components reside in <code>src/components/common/</code> ensuring accessibility, consistency, and zero layout shift:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Component Name</th>
+      <th>Component Type</th>
+      <th>Key Features &amp; Accessibility Attributes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>DataTable</code></td>
+      <td>Organism</td>
+      <td>Column-based sorting, custom cell renderers, empty state fallback, and pagination footer.</td>
+    </tr>
+    <tr>
+      <td><code>Modal</code></td>
+      <td>Molecule</td>
+      <td>Accessible backdrop, ESC key dismissal, focus trap, and enter/leave transitions.</td>
+    </tr>
+    <tr>
+      <td><code>Drawer</code></td>
+      <td>Organism</td>
+      <td>Off-canvas slide-over drawer for deep record inspection without leaving tabular context.</td>
+    </tr>
+    <tr>
+      <td><code>ConfirmDialog</code></td>
+      <td>Molecule</td>
+      <td>Destructive action confirmation dialogue with distinct danger and primary action styling.</td>
+    </tr>
+    <tr>
+      <td><code>TableToolbar</code></td>
+      <td>Molecule</td>
+      <td>Unified search input, filter trigger, CSV export button, and total count indicator.</td>
+    </tr>
+    <tr>
+      <td><code>Skeletons</code></td>
+      <td>Atom</td>
+      <td>CardSkeleton and TableSkeleton components preventing layout shifts while fetching data.</td>
+    </tr>
+    <tr>
+      <td><code>AppErrorBoundary</code></td>
+      <td>Guard</td>
+      <td>Top-level React error boundary displaying an elegant recovery card on uncaught render errors.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ================= SECTION 14 ================= -->
+<h2>14. End-to-End Sequence &amp; Data Flow Diagrams</h2>
+
+<h3>Sub-Admin Dynamic Navigation Sequence</h3>
+<div class="diagram-box avoid-break">
+  <div class="flow-step">1. Sub-Admin logs in &rarr; Receives <code>user_type: "sub_admin"</code> and <code>id: 14</code>.</div>
+  <div class="flow-step">2. <code>PermissionContext</code> resolves role and dispatches <code>POST /sub-admin-sidebar</code> with <code>{ role_id: 14 }</code>.</div>
+  <div class="flow-step">3. Backend responds with permitted menu titles: <code>["Customer Enquiry", "Quotes"]</code>.</div>
+  <div class="flow-step">4. <code>mapDefinitionToNavItem()</code> normalizes titles to internal modules and routes.</div>
+  <div class="flow-step">5. Sidebar renders <strong>Dashboard</strong>, permitted CRM items, and <strong>Profile</strong>. Unpermitted items remain hidden.</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ================= SECTION 15 ================= -->
+<h2>15. Environment Setup, Local Development &amp; Build Verification</h2>
+
+<h3>15.1 Environment Configuration</h3>
+<p>Create a <code>.env</code> file in the repository root:</p>
+<pre>
+# EquipmentsDekho Partners Backend API URL (without trailing slash)
+VITE_API_URL=https://partners.equipmentsdekho.com/apis/api
+</pre>
+
+<h3>15.2 CLI Commands Reference</h3>
+<pre>
+# 1. Install all dependencies
+npm install
+
+# 2. Launch development server with instantaneous HMR
+npm run dev
+
+# 3. Execute strict ESLint code quality checks
+npm run lint
+
+# 4. Compile optimized production build into dist/ directory
+npm run build
+
+# 5. Preview production build locally
+npm run preview
+
+# 6. Run production preview accessible over network on port 4000
+npm run start
+</pre>
+
+<h3>15.3 Build Verification Status</h3>
+<div class="callout callout-info">
+  <strong>Production Build Verification Passed:</strong><br>
+  Executed <code>npm run build</code> successfully using Vite 8 and Rollup. Output generated in <code>dist/</code>:
+  <br>&bull; <code>dist/index.html</code> (0.82 kB)
+  <br>&bull; <code>dist/assets/index-[hash].css</code> (76.22 kB | gzip: 12.25 kB)
+  <br>&bull; <code>dist/assets/index-[hash].js</code> (645.13 kB | gzip: 189.49 kB)
+  <br>&bull; Zero syntax errors, zero missing imports, zero circular dependency failures.
+</div>
+
+<!-- ================= SECTION 16 ================= -->
+<h2>16. Production Deployment &amp; Optimization Recommendations</h2>
+
+<h3>16.1 Nginx Static Hosting Configuration</h3>
+<pre>
+server {
+    listen 80;
+    server_name partners.equipmentsdekho.com;
+    root /var/www/partners-brand/dist;
+    index index.html;
+
+    # Gzip compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+</pre>
+
+<h3>16.2 Strategic Engineering Recommendations</h3>
+<ol>
+  <li><strong>Route-Level Code Splitting (<code>React.lazy</code>):</strong> Split heavy pages (<code>CustomerEnquiry.jsx</code>, <code>FeatureEquipmentQuotes.jsx</code>, <code>CRMReports.jsx</code>) using dynamic imports to reduce initial bundle size below 200 kB.</li>
+  <li><strong>IndexedDB Offline Caching:</strong> Integrate Dexie.js for client-side CRM caching so field operators can view lead contact details and past notes during temporary network outages.</li>
+  <li><strong>Real-Time SSE / WebSocket Alerts:</strong> Implement Server-Sent Events to automatically trigger new lead notifications without requiring manual table refreshes.</li>
+  <li><strong>E2E Playwright Suite:</strong> Automate critical test flows (Admin permission assignment, out-of-territory override confirmation, and quotation PDF generation).</li>
+</ol>
+
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 20pt 0 10pt 0;">
+<p style="text-align: center; font-size: 8pt; color: #94a3b8;">
+  EquipmentsDekho Partners Brand CRM &bull; Complete System Architecture &amp; Technical Manual v1.0.0 &bull; Confidential &amp; Proprietary
+</p>
+
+</body>
+</html>

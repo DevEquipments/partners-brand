@@ -24,21 +24,26 @@ export const DataTable = ({
   onSort,
   pagination,
   className = "",
+  stickyHeader = false,
 }) => {
   const isAllSelected =
     selectable && data.length > 0 && data.every((item) => selectedIds.has(item[rowKey]));
 
   return (
     <div
-      className={`w-full overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs ${className}`}
+      className={`w-full min-w-0 overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs ${className}`}
     >
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-left border-collapse text-xs min-w-full">
           {/* Header */}
-          <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850/80 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider select-none">
+          <thead className={stickyHeader ? "sticky top-0 z-10" : ""}>
+            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider select-none">
               {selectable && (
-                <th className="w-10 px-4 py-3 text-center shrink-0">
+                <th
+                  className={`w-10 px-4 py-3 text-center shrink-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 ${
+                    stickyHeader ? "sticky top-0 z-10" : ""
+                  }`}
+                >
                   <Checkbox
                     checked={isAllSelected}
                     onChange={() => onSelectAll?.(data)}
@@ -54,15 +59,17 @@ export const DataTable = ({
                   <th
                     key={col.key}
                     onClick={() => canSort && onSort(col.key)}
-                    className={`px-4 py-3 font-bold text-[11px] ${
+                    className={`px-4 py-3 font-bold text-[11px] whitespace-nowrap bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-800 ${
                       col.align === "right"
                         ? "text-right"
                         : col.align === "center"
                         ? "text-center"
                         : "text-left"
-                    } ${canSort ? "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" : ""} ${
-                      col.className || ""
-                    }`}
+                    } ${
+                      canSort
+                        ? "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-colors"
+                        : ""
+                    } ${stickyHeader ? "sticky top-0 z-10" : ""} ${col.className || ""}`}
                     style={col.width ? { width: col.width } : undefined}
                   >
                     <div
@@ -76,7 +83,7 @@ export const DataTable = ({
                     >
                       <span>{col.label}</span>
                       {canSort && (
-                        <span className="text-slate-400 dark:text-slate-500">
+                        <span className="text-slate-400 dark:text-slate-400">
                           {isSorted ? (
                             sortDirection === "asc" ? (
                               <ArrowUp className="w-3.5 h-3.5 text-orange-500" />
@@ -138,7 +145,7 @@ export const DataTable = ({
                     key={id}
                     onClick={() => onRowClick?.(row)}
                     className={`transition-colors duration-100 ${
-                      onRowClick ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-850/60" : ""
+                      onRowClick ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60" : ""
                     } ${
                       isSelected
                         ? "bg-orange-50/50 dark:bg-orange-950/20"
