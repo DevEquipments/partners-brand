@@ -89,6 +89,57 @@ export const subAdminRepository = {
       ...options,
     });
   },
+
+  /**
+   * Update Sub Admin active/inactive status via the remote backend API.
+   * Calls: POST /update-sub-admin-status
+   *
+   * @param {Object|FormData} payload
+   * @param {number|string} [payload.id] - The Sub Admin ID
+   * @param {number|string} [payload.status] - New status: 1 (active) or 0 (inactive/deactive)
+   * @param {Object} [options={}]
+   * @returns {Promise<Object>} API response object
+   */
+  async updateSubAdminStatus(payload, options = {}) {
+    let formData;
+
+    if (typeof FormData !== "undefined" && payload instanceof FormData) {
+      formData = payload;
+    } else {
+      const rawId = payload?.id;
+      if (rawId === undefined || rawId === null || String(rawId).trim() === "") {
+        throw new Error("Sub Admin ID is required to update status.");
+      }
+
+      const rawStatus = payload?.status;
+      const cleanStatus =
+        rawStatus === 1 ||
+        rawStatus === "1" ||
+        (typeof rawStatus === "string" && rawStatus.trim().toLowerCase() === "active") ||
+        rawStatus === true
+          ? 1
+          : 0;
+
+      formData = new FormData();
+      formData.append("id", String(rawId).trim());
+      formData.append("status", String(cleanStatus));
+    }
+
+    const response = await apiRequest({
+      ...API_ENDPOINTS.updateSubAdminStatus,
+      data: formData,
+      ...options,
+    });
+
+    if (response?.status === false) {
+      const err = new Error(response?.message || "Failed to update Sub Admin status.");
+      err.errors = response?.errors || {};
+      err.data = response?.data;
+      throw err;
+    }
+
+    return response;
+  },
 };
 
 export default subAdminRepository;

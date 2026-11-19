@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import toast from "react-hot-toast";
 import { subAdminService } from "../services/subAdminService";
 import { useBrand } from "./useBrand";
 import { getApiErrorMessage } from "../utils/errorHandler";
+import { isSubAdminActive } from "../utils/subAdminStatus";
 
 /**
  * Hook for managing Sub Admin accounts and live account limits from real API
@@ -22,6 +24,7 @@ export const useSubAdmins = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [selectedSubAdminId, setSelectedSubAdminId] = useState(null);
+  const [updatingSubAdminIds, setUpdatingSubAdminIds] = useState(new Set());
 
   // Track latest brand and request to prevent race conditions and stale cross-brand states
   const latestBrandIdRef = useRef(brandId);
@@ -184,6 +187,83 @@ export const useSubAdmins = () => {
     [brandId, limits, isLimitsLoaded, fetchSubAdmins]
   );
 
+  const updateSubAdminStatus = useCallback(
+    async (id, newStatus) => {
+      if (id === undefined || id === null || String(id).trim() === "") {
+        throw new Error("Sub Admin ID is required.");
+      }
+
+      const numericId = Number(id);
+      const targetId = Number.isNaN(numericId) ? String(id).trim() : numericId;
+
+      // Prevent duplicate in-flight requests for this sub-admin
+      if (updatingSubAdminIds.has(targetId)) {
+        return;
+      }
+
+      const cleanStatus =
+        newStatus === 1 ||
+        newStatus === "1" ||
+        (typeof newStatus === "string" && newStatus.trim().toLowerCase() === "active") ||
+        newStatus === true
+          ? 1
+          : 0;
+
+      setUpdatingSubAdminIds((prev) => new Set(prev).add(targetId));
+
+      try {
+        const response = await subAdminService.updateSubAdminStatus({
+          id: targetId,
+          status: cleanStatus,
+        });
+
+        const serverMsg =
+          response?.message ||
+          (cleanStatus === 1
+            ? "Sub-admin activated successfully."
+            : "Sub-admin deactivated successfully.");
+        toast.success(serverMsg, { id: `status-update-${targetId}` });
+
+        // Extract returned status fields from backend response if available
+        const resData = response?.data;
+        const confirmedActive =
+          resData?.status !== undefined
+            ? isSubAdminActive(resData.status, resData.status_text)
+            : cleanStatus === 1;
+        const normalizedStatusString = confirmedActive ? "Active" : "Inactive";
+
+        // Optimistically update local list with server-confirmed status
+        setSubAdmins((prevList) =>
+          prevList.map((item) => {
+            if (String(item.id) === String(targetId)) {
+              return {
+                ...item,
+                status: normalizedStatusString,
+                status_text: normalizedStatusString,
+              };
+            }
+            return item;
+          })
+        );
+
+        return response;
+      } catch (err) {
+        const errorMsg = getApiErrorMessage(err, "Failed to update Sub Admin status.");
+        if (!err?.toastShown) {
+          toast.error(errorMsg, { id: `status-update-err-${targetId}` });
+        }
+        throw err;
+      } finally {
+        setUpdatingSubAdminIds((prev) => {
+          const next = new Set(prev);
+          next.delete(targetId);
+          return next;
+        });
+      }
+    },
+    [updatingSubAdminIds]
+  );
+
   return {
     subAdmins,
     isLoading,
@@ -196,6 +276,27 @@ export const useSubAdmins = () => {
     refreshSubAdmins: () => fetchSubAdmins(true),
     retry: () => fetchSubAdmins(false),
     createSubAdmin,
+    updateSubAdminStatus,
+    updatingSubAdminIds,
+    isUpdatingSubAdmin: (id) =>
+      updatingSubAdminIds.has(id) || updatingSubAdminIds.has(Number(id)),
+    editSubAdminLocal: (id, updatedData) => {
+      setSubAdmins((prev) =>
+        prev.map((item) =>
+          String(item.id) === String(id) ? { ...item, ...updatedData } : item
+        )
+      );
+    },
+    deleteSubAdminLocal: (id) => {
+      setSubAdmins((prev) => prev.filter((item) => String(item.id) !== String(id)));
+      setLimits((prev) => ({
+        ...prev,
+        current_sub_admins:
+          prev.current_sub_admins !== null ? Math.max(0, prev.current_sub_admins - 1) : null,
+        remaining_sub_admins:
+          prev.remaining_sub_admins !== null ? prev.remaining_sub_admins + 1 : null,
+      }));
+    },
     // Dynamic capacity limits from POST /get-subadmins
     limits,
     allowedSubAdmins: limits.allowed_sub_admins,

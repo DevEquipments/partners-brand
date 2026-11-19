@@ -6,12 +6,27 @@ import {
   Building,
   User,
   ExternalLink,
+  Edit3,
+  KeyRound,
+  Trash2,
 } from "lucide-react";
 import Button from "../../components/common/Button";
+import { normalizeSubAdminStatus } from "../../utils/subAdminStatus";
 
-export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }) => {
+export const SubAdminDetail = ({
+  subAdmin,
+  _subAdminId,
+  onBack,
+  onManageAccess,
+  onToggleStatus,
+  isUpdatingStatus = false,
+  onEdit,
+  onDelete,
+  onUpdatePassword,
+}) => {
   const navigate = useNavigate();
   const member = subAdmin;
+  const statusInfo = normalizeSubAdminStatus(member?.status, member?.status_text);
 
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -37,7 +52,7 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Top Breadcrumb & Action */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <Button
           variant="outline"
           size="sm"
@@ -47,14 +62,49 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
           Back to Sub Admins
         </Button>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleManageAccess}
-          icon={ShieldCheck}
-        >
-          Manage Access
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(member)}
+              icon={Edit3}
+            >
+              Edit
+            </Button>
+          )}
+
+          {onUpdatePassword && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onUpdatePassword(member)}
+              icon={KeyRound}
+            >
+              Password
+            </Button>
+          )}
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleManageAccess}
+            icon={ShieldCheck}
+          >
+            Manage Access
+          </Button>
+
+          {onDelete && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onDelete(member)}
+              icon={Trash2}
+            >
+              Delete
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Operator Header Card */}
@@ -74,6 +124,12 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
                 </span>
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
                   Role: Sub Admin
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border flex items-center gap-1.5 ${statusInfo.badgeClass}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotClass}`} />
+                  <span>{statusInfo.text}</span>
                 </span>
               </div>
 
@@ -175,6 +231,33 @@ export const SubAdminDetail = ({ subAdmin, _subAdminId, onBack, onManageAccess }
                 </td>
                 <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
                   Sub Admin (Brand Regional Operator)
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 bg-slate-50/30 dark:bg-slate-800/30">
+                  Account Status
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${statusInfo.badgeClass}`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotClass}`} />
+                      <span>{statusInfo.text}</span>
+                    </span>
+                    {onToggleStatus && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isUpdatingStatus || statusInfo.isActive === null}
+                        onClick={() => onToggleStatus(member)}
+                        isLoading={isUpdatingStatus}
+                      >
+                        {statusInfo.isActive ? "Deactivate Account" : "Activate Account"}
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             </tbody>

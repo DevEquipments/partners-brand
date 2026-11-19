@@ -13,6 +13,7 @@ import Button from "../../components/common/Button";
 import ErrorState from "../../components/common/ErrorState";
 import EmptyState from "../../components/common/EmptyState";
 import { TableSkeleton } from "../../components/common/Skeletons";
+import { normalizeSubAdminStatus } from "../../utils/subAdminStatus";
 
 export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -150,69 +151,94 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
             />
 
             {/* Sub Admin Identity Summary */}
-            {selectedSubAdmin && (
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 text-xs">
-                  <div>
-                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                      Sub Admin ID
-                    </span>
-                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                      #{selectedSubAdmin.id}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                      Role ID
-                    </span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                      #{roleId}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                      Username
-                    </span>
-                    <span className="font-semibold text-slate-900 dark:text-white truncate block">
-                      @{selectedSubAdmin.username}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                      Company
-                    </span>
-                    <span
-                      className="text-slate-700 dark:text-slate-300 truncate block font-medium"
-                      title={selectedSubAdmin.company_name || "-"}
-                    >
-                      {selectedSubAdmin.company_name || "-"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                      Phone
-                    </span>
-                    <span
-                      className="text-slate-700 dark:text-slate-300 truncate block font-mono text-xs"
-                      title={selectedSubAdmin.phone_no || selectedSubAdmin.phone || "-"}
-                    >
-                      {selectedSubAdmin.phone_no || selectedSubAdmin.phone || "-"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                      Email
-                    </span>
-                    <span
-                      className="text-slate-700 dark:text-slate-300 truncate block"
-                      title={selectedSubAdmin.email || "-"}
-                    >
-                      {selectedSubAdmin.email || "-"}
-                    </span>
+            {selectedSubAdmin && (() => {
+              const statusInfo = normalizeSubAdminStatus(
+                selectedSubAdmin.status,
+                selectedSubAdmin.status_text
+              );
+              return (
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                  <div className="grid grid-cols-2 sm:grid-cols-7 gap-4 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                        Sub Admin ID
+                      </span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                        #{selectedSubAdmin.id}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                        Role ID
+                      </span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        #{roleId}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                        Status
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 mt-0.5 text-xs font-semibold">
+                        <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotClass}`} />
+                        <span
+                          className={
+                            statusInfo.isActive === true
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : statusInfo.isActive === false
+                              ? "text-slate-500 dark:text-slate-400"
+                              : "text-amber-600 dark:text-amber-400"
+                          }
+                        >
+                          {statusInfo.text}
+                        </span>
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                        Username
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white truncate block">
+                        @{selectedSubAdmin.username}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                        Company
+                      </span>
+                      <span
+                        className="text-slate-700 dark:text-slate-300 truncate block font-medium"
+                        title={selectedSubAdmin.company_name || "-"}
+                      >
+                        {selectedSubAdmin.company_name || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                        Phone
+                      </span>
+                      <span
+                        className="text-slate-700 dark:text-slate-300 truncate block font-mono text-xs"
+                        title={selectedSubAdmin.phone_no || selectedSubAdmin.phone || "-"}
+                      >
+                        {selectedSubAdmin.phone_no || selectedSubAdmin.phone || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
+                        Email
+                      </span>
+                      <span
+                        className="text-slate-700 dark:text-slate-300 truncate block"
+                        title={selectedSubAdmin.email || "-"}
+                      >
+                        {selectedSubAdmin.email || "-"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* PERMISSIONS CARD */}
