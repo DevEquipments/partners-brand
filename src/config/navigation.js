@@ -8,6 +8,7 @@ import {
   Shield,
   BarChart3,
   User,
+  Building2,
 } from "lucide-react";
 import { MODULES, PERMISSIONS } from "./permissions";
 import { resolveSlugToModule } from "../utils/permissionResolver";
@@ -155,11 +156,12 @@ export const getNavigationSections = (role = "ADMIN", dynamicDefinitions = []) =
           adminOnly: true,
         },
         {
-          label: "Profile",
+          label: "Brand Profile",
           path: "/profile",
-          icon: User,
+          icon: Building2,
           module: MODULES.PROFILE,
           permission: PERMISSIONS.PROFILE_VIEW,
+          adminOnly: true,
         },
       ],
     });
@@ -199,10 +201,10 @@ export const getNavigationSections = (role = "ADMIN", dynamicDefinitions = []) =
       items: subAdminCrmItems,
     },
     {
-      title: "Settings",
+      title: "Account",
       items: [
         {
-          label: "Profile",
+          label: "My Profile",
           path: "/profile",
           icon: User,
           module: MODULES.PROFILE,

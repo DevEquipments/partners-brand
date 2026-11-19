@@ -83,6 +83,11 @@ const API_ENDPOINTS = {
     url: "/delete-role-permission",
     method: "post",
   },
+
+  updateSubAdminStatus: {
+    url: "/update-sub-admin-status",
+    method: "post",
+  },
 };
 
 export default API_ENDPOINTS;

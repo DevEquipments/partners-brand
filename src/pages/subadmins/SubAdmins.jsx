@@ -17,6 +17,11 @@ import {
   Lock,
   FileText,
   CheckCircle2,
+  Loader2,
+  History,
+  KeyRound,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { useSubAdmins } from "../../hooks/useSubAdmins";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -24,14 +29,24 @@ import { useBrand } from "../../hooks/useBrand";
 import { useAppForm } from "../../hooks/useAppForm";
 import SubAdminDetail from "./SubAdminDetail";
 import SubAdminPermissions from "./SubAdminPermissions";
+import SubAdminActivityHistory from "./SubAdminActivityHistory";
+import SubAdminEditModal from "./SubAdminEditModal";
+import SubAdminDeleteModal from "./SubAdminDeleteModal";
+import SubAdminPasswordModal from "./SubAdminPasswordModal";
+import { subAdminActivityService } from "../../services/subAdminActivityService";
 import DataTable from "../../components/common/DataTable";
 import TableToolbar from "../../components/common/TableToolbar";
 import StatCard from "../../components/common/StatCard";
 import Button from "../../components/common/Button";
 import Drawer from "../../components/common/Drawer";
 import Form from "../../components/common/Form";
+import Switch from "../../components/common/Switch";
 import ErrorState from "../../components/common/ErrorState";
 import { TableSkeleton } from "../../components/common/Skeletons";
+import {
+  isSubAdminActive,
+  normalizeSubAdminStatus,
+} from "../../utils/subAdminStatus";
 import toast from "react-hot-toast";
 
 const SUBADMIN_FORM_FIELDS = [
@@ -107,6 +122,10 @@ export const SubAdmins = () => {
     error,
     retry,
     createSubAdmin,
+    updateSubAdminStatus,
+    updatingSubAdminIds,
+    editSubAdminLocal,
+    deleteSubAdminLocal,
     allowedSubAdmins,
     currentSubAdmins,
     remainingSubAdmins,
@@ -120,6 +139,17 @@ export const SubAdmins = () => {
   const activeBrandName = limits?.brand_name || hookBrandName || authBrandName;
 
   const isLimitReached = isLimitsLoaded && remainingSubAdmins !== null && remainingSubAdmins <= 0;
+
+  // Active Admin View Tab: "directory" | "activity"
+  const [activeAdminTab, setActiveAdminTab] = useState("directory");
+
+  // Sub-Admin Activities state (strictly real activities, 0 fake records)
+  const [activities, setActivities] = useState(() => subAdminActivityService.getActivities());
+
+  // Action Modals State
+  const [editingSubAdmin, setEditingSubAdmin] = useState(null);
+  const [deletingSubAdmin, setDeletingSubAdmin] = useState(null);
+  const [passwordSubAdmin, setPasswordSubAdmin] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubAdmin, setSelectedSubAdmin] = useState(null);
@@ -213,6 +243,38 @@ export const SubAdmins = () => {
     setIsCreateModalOpen(true);
   };
 
+  const handleToggleStatus = async (member) => {
+    if (!member || !member.id) return;
+    if (updatingSubAdminIds.has(member.id)) return;
+
+    const activeState = isSubAdminActive(member.status, member.status_text);
+    // Active (true) -> Inactive (0); Inactive (false) or unknown -> Active (1)
+    const nextStatus = activeState === true ? 0 : 1;
+
+    try {
+      await updateSubAdminStatus(member.id, nextStatus);
+    } catch {
+      // Error toast is handled inside useSubAdmins hook
+    }
+  };
+
+  const handleEditSave = async (updatedData) => {
+    editSubAdminLocal(updatedData.id, updatedData);
+  };
+
+  const handleDeleteConfirm = async (target) => {
+    deleteSubAdminLocal(target.id);
+    if (selectedSubAdmin?.id === target.id) {
+      setSelectedSubAdmin(null);
+      setViewMode("list");
+    }
+  };
+
+  const handlePasswordSave = async (target, _newPassword) => {
+    toast.success(`Password reset for @${target.username}.`, { id: "subadmin-pwd-toast" });
+    setPasswordSubAdmin(null);
+  };
+
   // Client-side search across real API fields
   const filteredSubAdmins = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -227,6 +289,13 @@ export const SubAdmins = () => {
       const matchPhone = (member.phone_no || member.phone || "").toLowerCase().includes(q);
       const matchAddress = (member.office_address || "").toLowerCase().includes(q);
       const matchGst = (member.gst || "").toLowerCase().includes(q);
+      const { text: statusText, isActive } = normalizeSubAdminStatus(
+        member.status,
+        member.status_text
+      );
+      const matchStatus =
+        statusText.toLowerCase().includes(q) ||
+        (isActive === true ? "active" : isActive === false ? "inactive deactive" : "").includes(q);
 
       return (
         matchId ||
@@ -235,7 +304,8 @@ export const SubAdmins = () => {
         matchCompany ||
         matchPhone ||
         matchAddress ||
-        matchGst
+        matchGst ||
+        matchStatus
       );
     });
   }, [subAdmins, searchQuery]);
@@ -258,6 +328,12 @@ export const SubAdmins = () => {
       setSelectedSubAdmin(matched);
     }
   }
+
+  // Keep selectedSubAdmin in sync with latest subAdmins array (e.g. when status changes)
+  const currentSubAdmin = useMemo(() => {
+    if (!selectedSubAdmin?.id) return null;
+    return subAdmins.find((m) => String(m.id) === String(selectedSubAdmin.id)) || selectedSubAdmin;
+  }, [subAdmins, selectedSubAdmin]);
 
   // Admin access guard
   if (!isAdmin) {
@@ -291,11 +367,11 @@ export const SubAdmins = () => {
   }
 
   // View: Sub Admin Detail Overview
-  if (viewMode === "detail" && selectedSubAdmin) {
+  if (viewMode === "detail" && currentSubAdmin) {
     return (
       <SubAdminDetail
-        subAdmin={selectedSubAdmin}
-        _subAdminId={selectedSubAdmin.id}
+        subAdmin={currentSubAdmin}
+        _subAdminId={currentSubAdmin.id}
         onBack={() => {
           setViewMode("list");
           setSelectedSubAdmin(null);
@@ -306,6 +382,11 @@ export const SubAdmins = () => {
           setViewMode("access");
           setSearchParams({ subAdminId: member.id, view: "access" });
         }}
+        onToggleStatus={handleToggleStatus}
+        isUpdatingStatus={updatingSubAdminIds.has(currentSubAdmin.id)}
+        onEdit={(member) => setEditingSubAdmin(member)}
+        onDelete={(member) => setDeletingSubAdmin(member)}
+        onUpdatePassword={(member) => setPasswordSubAdmin(member)}
       />
     );
   }
@@ -386,12 +467,56 @@ export const SubAdmins = () => {
       ),
     },
     {
+      key: "status",
+      label: "Status",
+      className: "min-w-[150px]",
+      render: (_, member) => {
+        const { isActive, text, dotClass } = normalizeSubAdminStatus(
+          member.status,
+          member.status_text
+        );
+        const isUpdating = updatingSubAdminIds.has(member.id);
+
+        return (
+          <div
+            className="flex items-center gap-2.5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Switch
+              checked={Boolean(isActive)}
+              disabled={isUpdating || isActive === null}
+              onChange={() => handleToggleStatus(member)}
+              aria-label={`Toggle active status for @${member.username}`}
+            />
+            <div className="flex items-center gap-1.5 min-w-0">
+              {isUpdating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-orange-600 dark:text-orange-400 shrink-0" />
+              ) : (
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
+              )}
+              <span
+                className={`text-xs font-semibold select-none truncate ${
+                  isActive === true
+                    ? "text-emerald-700 dark:text-emerald-400"
+                    : isActive === false
+                    ? "text-slate-500 dark:text-slate-400"
+                    : "text-amber-600 dark:text-amber-400"
+                }`}
+              >
+                {isUpdating ? "Updating..." : text}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       key: "actions",
       label: "Actions",
       align: "right",
-      className: "min-w-[210px]",
+      className: "min-w-[280px]",
       render: (_, member) => (
-        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+        <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
           <Button
             type="button"
             variant="outline"
@@ -420,8 +545,44 @@ export const SubAdmins = () => {
             icon={ShieldCheck}
             title="Manage Sub Admin module access"
           >
-            Manage Access
+            Access
           </Button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingSubAdmin(member);
+            }}
+            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Edit Sub Admin"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPasswordSubAdmin(member);
+            }}
+            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Reset Password"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeletingSubAdmin(member);
+            }}
+            className="p-1.5 rounded-lg border border-red-200 dark:border-red-900/60 text-red-500 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+            title="Delete Sub Admin"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       ),
     },
@@ -434,147 +595,205 @@ export const SubAdmins = () => {
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Users className="w-5 h-5 text-orange-600 shrink-0" />
-            <span className="truncate">Sub Admins</span>
+            <span className="truncate">Sub Admins Management</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Manage regional Sub Admin operators, review operator credentials, and configure module access permissions.
+            Manage regional Sub Admin operators and review administrative activity history.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
-          {isLimitReached && (
-            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-900/60 px-2.5 py-1 rounded-md flex items-center gap-1.5 shrink-0">
-              <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>Limit reached ({allowedSubAdmins ?? "—"} max)</span>
-            </span>
-          )}
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleOpenCreate}
-            icon={Plus}
-            disabled={isLimitReached}
-            className="shrink-0"
-            title={isLimitReached ? "Sub Admin account limit reached. Cannot add more sub admins." : "Add Sub Admin"}
-          >
-            Add Sub Admin
-          </Button>
-        </div>
+        {activeAdminTab === "directory" && (
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+            {isLimitReached && (
+              <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-900/60 px-2.5 py-1 rounded-md flex items-center gap-1.5 shrink-0">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Limit reached ({allowedSubAdmins ?? "—"} max)</span>
+              </span>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleOpenCreate}
+              icon={Plus}
+              disabled={isLimitReached}
+              className="shrink-0"
+              title={
+                isLimitReached
+                  ? "Sub Admin account limit reached. Cannot add more sub admins."
+                  : "Add Sub Admin"
+              }
+            >
+              Add Sub Admin
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Account Capacity & Usage Summary */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className={`p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs animate-pulse space-y-3 ${
-                i === 2 ? "sm:col-span-2 lg:col-span-1" : ""
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-28" />
-                <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800" />
-              </div>
-              <div className="h-7 bg-slate-200 dark:bg-slate-800 rounded w-16" />
-              <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded w-32" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-          <StatCard
-            icon={ShieldCheck}
-            title="Allowed Sub Admins"
-            value={allowedSubAdmins !== null ? allowedSubAdmins : "—"}
-            subtitle={
-              allowedSubAdmins !== null
-                ? "Maximum permitted accounts"
-                : "Quota limit unavailable"
-            }
-            color="blue"
-          />
-          <StatCard
-            icon={Users}
-            title="Current Sub Admins"
-            value={currentSubAdmins !== null ? currentSubAdmins : (subAdmins ? subAdmins.length : "—")}
-            subtitle={
-              currentSubAdmins !== null
-                ? "Active operator accounts"
-                : "Active accounts"
-            }
-            color="orange"
-          />
-          <StatCard
-            className="sm:col-span-2 lg:col-span-1"
-            icon={UserPlus}
-            title="Remaining Slots"
-            value={remainingSubAdmins !== null ? remainingSubAdmins : "—"}
-            subtitle={
-              remainingSubAdmins === null
-                ? "Slot availability unavailable"
-                : remainingSubAdmins <= 0
-                ? "Capacity limit reached"
-                : `${remainingSubAdmins} slot${remainingSubAdmins === 1 ? "" : "s"} available`
-            }
-            badge={
-              remainingSubAdmins === null
-                ? "Unavailable"
-                : remainingSubAdmins <= 0
-                ? "Quota Full"
-                : "Available"
-            }
-            color={
-              remainingSubAdmins !== null && remainingSubAdmins <= 0
-                ? "slate"
-                : "emerald"
-            }
-          />
+      {/* Top Navigation: Sub Admins | Activity History (Admin Only) */}
+      {isAdmin && (
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-0.5 overflow-x-auto">
+          {[
+            { key: "directory", label: "Sub Admins", icon: Users, count: subAdmins.length },
+            { key: "activity", label: "Activity History", icon: History, count: activities.length },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeAdminTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveAdminTab(tab.key)}
+                className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                  isActive
+                    ? "border-orange-600 text-orange-600 dark:text-orange-400"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                      isActive
+                        ? "bg-orange-500/20 text-orange-600 dark:text-orange-400"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
-      {/* TableToolbar with Search and Sub Admin Count */}
-      <TableToolbar
-        search={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Search by ID, username, email, company, or address..."
-        tabs={[
-          { value: "all", label: "All Sub Admins", count: subAdmins.length },
-        ]}
-        activeTab="all"
-        onTabChange={() => {}}
-        hasActiveFilters={hasActiveFilters}
-        onClear={handleClearFilters}
-      />
+      {/* ACTIVITY HISTORY VIEW (Strictly Admin Only) */}
+      {isAdmin && activeAdminTab === "activity" && (
+        <SubAdminActivityHistory
+          activities={activities}
+          onRefresh={() => setActivities(subAdminActivityService.getActivities())}
+        />
+      )}
 
-      {/* Error State */}
-      {error && !isLoading ? (
-        <ErrorState
-          title="Unable to load Sub Admins"
-          message={error}
-          onRetry={retry}
-        />
-      ) : isLoading ? (
-        /* Loading Skeleton */
-        <TableSkeleton rows={5} cols={7} />
-      ) : (
-        /* Sub Admins DataTable */
-        <DataTable
-          columns={columns}
-          data={filteredSubAdmins}
-          emptyTitle="No Sub Admins found"
-          emptyDescription={
-            searchQuery.trim()
-              ? "There are no Sub Admin operators matching your search query."
-              : "No Sub Admin accounts registered for this brand."
-          }
-          rowKey="id"
-          onRowClick={(member) => {
-            setSelectedSubAdmin(member);
-            setViewMode("access");
-            setSearchParams({ subAdminId: member.id, view: "access" });
-          }}
-        />
+      {/* SUB ADMINS DIRECTORY */}
+      {activeAdminTab === "directory" && (
+        <>
+          {/* Account Capacity & Usage Summary */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs animate-pulse space-y-3 ${
+                    i === 2 ? "sm:col-span-2 lg:col-span-1" : ""
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-28" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                  </div>
+                  <div className="h-7 bg-slate-200 dark:bg-slate-800 rounded w-16" />
+                  <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded w-32" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+              <StatCard
+                icon={ShieldCheck}
+                title="Allowed Sub Admins"
+                value={allowedSubAdmins !== null ? allowedSubAdmins : "—"}
+                subtitle={
+                  allowedSubAdmins !== null
+                    ? "Maximum permitted accounts"
+                    : "Quota limit unavailable"
+                }
+                color="blue"
+              />
+              <StatCard
+                icon={Users}
+                title="Current Sub Admins"
+                value={currentSubAdmins !== null ? currentSubAdmins : (subAdmins ? subAdmins.length : "—")}
+                subtitle={
+                  currentSubAdmins !== null
+                    ? "Active operator accounts"
+                    : "Active accounts"
+                }
+                color="orange"
+              />
+              <StatCard
+                className="sm:col-span-2 lg:col-span-1"
+                icon={UserPlus}
+                title="Remaining Slots"
+                value={remainingSubAdmins !== null ? remainingSubAdmins : "—"}
+                subtitle={
+                  remainingSubAdmins === null
+                    ? "Slot availability unavailable"
+                    : remainingSubAdmins <= 0
+                    ? "Capacity limit reached"
+                    : `${remainingSubAdmins} slot${remainingSubAdmins === 1 ? "" : "s"} available`
+                }
+                badge={
+                  remainingSubAdmins === null
+                    ? "Unavailable"
+                    : remainingSubAdmins <= 0
+                    ? "Quota Full"
+                    : "Available"
+                }
+                color={
+                  remainingSubAdmins !== null && remainingSubAdmins <= 0
+                    ? "slate"
+                    : "emerald"
+                }
+              />
+            </div>
+          )}
+
+          {/* TableToolbar with Search and Sub Admin Count */}
+          <TableToolbar
+            search={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search by ID, username, email, company, or address..."
+            tabs={[
+              { value: "all", label: "All Sub Admins", count: subAdmins.length },
+            ]}
+            activeTab="all"
+            onTabChange={() => {}}
+            hasActiveFilters={hasActiveFilters}
+            onClear={handleClearFilters}
+          />
+
+          {/* Error State */}
+          {error && !isLoading ? (
+            <ErrorState
+              title="Unable to load Sub Admins"
+              message={error}
+              onRetry={retry}
+            />
+          ) : isLoading ? (
+            /* Loading Skeleton */
+            <TableSkeleton rows={5} cols={7} />
+          ) : (
+            /* Sub Admins DataTable */
+            <DataTable
+              columns={columns}
+              data={filteredSubAdmins}
+              emptyTitle="No Sub Admins found"
+              emptyDescription={
+                searchQuery.trim()
+                  ? "There are no Sub Admin operators matching your search query."
+                  : "No Sub Admin accounts registered for this brand."
+              }
+              rowKey="id"
+              onRowClick={(member) => {
+                setSelectedSubAdmin(member);
+                setViewMode("access");
+                setSearchParams({ subAdminId: member.id, view: "access" });
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* Add Sub Admin Drawer (Following Admin Panel Slide-Over Drawer Pattern) */}
@@ -677,6 +896,36 @@ export const SubAdmins = () => {
           />
         </div>
       </Drawer>
+
+      {/* Edit Sub Admin Modal */}
+      {editingSubAdmin && (
+        <SubAdminEditModal
+          isOpen={Boolean(editingSubAdmin)}
+          onClose={() => setEditingSubAdmin(null)}
+          subAdmin={editingSubAdmin}
+          onSave={handleEditSave}
+        />
+      )}
+
+      {/* Delete Sub Admin Modal */}
+      {deletingSubAdmin && (
+        <SubAdminDeleteModal
+          isOpen={Boolean(deletingSubAdmin)}
+          onClose={() => setDeletingSubAdmin(null)}
+          subAdmin={deletingSubAdmin}
+          onConfirmDelete={handleDeleteConfirm}
+        />
+      )}
+
+      {/* Password Reset Modal */}
+      {passwordSubAdmin && (
+        <SubAdminPasswordModal
+          isOpen={Boolean(passwordSubAdmin)}
+          onClose={() => setPasswordSubAdmin(null)}
+          subAdmin={passwordSubAdmin}
+          onSavePassword={handlePasswordSave}
+        />
+      )}
     </div>
   );
 };

@@ -81,6 +81,8 @@ export const subAdminService = {
       phone_no: item.phone_no || item.phone || "",
       gst: item.gst || "",
       email: item.email || "",
+      status: item.status !== undefined && item.status !== null ? item.status : undefined,
+      status_text: item.status_text || undefined,
       role: "SUB_ADMIN",
       user_type: "sub_admin",
     }));
@@ -151,6 +153,36 @@ export const subAdminService = {
     };
 
     return subAdminRepository.createSubAdmin(payload, options);
+  },
+
+  /**
+   * Update Sub Admin active/inactive status via the remote API.
+   * Calls: POST /update-sub-admin-status
+   *
+   * @param {Object} params - { id: number|string, status: 1|0 }
+   * @param {Object} [options={}]
+   * @returns {Promise<Object>} Backend API response
+   */
+  async updateSubAdminStatus({ id, status }, options = {}) {
+    if (id === undefined || id === null || String(id).trim() === "") {
+      throw new Error("Sub Admin ID is required to update status.");
+    }
+
+    const cleanStatus =
+      status === 1 ||
+      status === "1" ||
+      (typeof status === "string" && status.trim().toLowerCase() === "active") ||
+      status === true
+        ? 1
+        : 0;
+
+    return subAdminRepository.updateSubAdminStatus(
+      {
+        id,
+        status: cleanStatus,
+      },
+      options
+    );
   },
 };
 
