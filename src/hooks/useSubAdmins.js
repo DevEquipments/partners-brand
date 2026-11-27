@@ -77,19 +77,21 @@ export const useSubAdmins = () => {
         }
 
         const list = Array.isArray(result) ? result : (result?.sub_admins || []);
+        const allowed = result?.allowed_sub_admins ?? null;
+        const currentCount = list.length;
+        const remaining = allowed !== null ? Math.max(0, allowed - currentCount) : (result?.remaining_sub_admins ?? null);
+
         setSubAdmins(list);
         setLimits({
-          allowed_sub_admins: result?.allowed_sub_admins ?? null,
-          current_sub_admins: result?.current_sub_admins ?? null,
-          remaining_sub_admins: result?.remaining_sub_admins ?? null,
+          allowed_sub_admins: allowed,
+          current_sub_admins: currentCount,
+          remaining_sub_admins: remaining,
           brand_id: result?.brand_id ?? null,
           brand_name: result?.brand_name ?? "",
         });
         setIsLimitsLoaded(
-          result?.allowed_sub_admins !== null &&
-          result?.allowed_sub_admins !== undefined &&
-          result?.remaining_sub_admins !== null &&
-          result?.remaining_sub_admins !== undefined
+          allowed !== null &&
+          allowed !== undefined
         );
       } catch (err) {
         if (latestBrandIdRef.current !== brandId || currentReqId !== requestIdRef.current) {
@@ -139,8 +141,12 @@ export const useSubAdmins = () => {
   const createSubAdmin = useCallback(
     async (formData) => {
       // Pre-check capacity limit before sending request
-      if (isLimitsLoaded && limits.remaining_sub_admins !== null && limits.remaining_sub_admins <= 0) {
-        const msg = `Brand has reached its Sub Admin account limit (${limits.allowed_sub_admins ?? "—"} allowed). 0 slots remaining.`;
+      const allowed = limits.allowed_sub_admins;
+      const currentCount = subAdmins.length;
+      const remaining = allowed !== null ? Math.max(0, allowed - currentCount) : limits.remaining_sub_admins;
+
+      if (isLimitsLoaded && remaining !== null && remaining <= 0) {
+        const msg = `Brand has reached its Sub Admin account limit (${allowed ?? "—"} allowed). 0 slots remaining.`;
         throw new Error(msg);
       }
 
@@ -156,35 +162,55 @@ export const useSubAdmins = () => {
       try {
         const response = await subAdminService.createSubAdmin(payload);
 
-        // Immediate feedback: if server returned updated limits in response.data, apply them
-        if (response?.data) {
-          const resData = response.data;
-          const parseLimit = (val) => {
-            if (val === undefined || val === null || val === "") return null;
-            const num = Number(val);
-            return Number.isFinite(num) ? num : null;
-          };
-          if (resData.allowed_sub_admins !== undefined || resData.remaining_sub_admins !== undefined) {
-            setLimits((prev) => ({
-              ...prev,
-              allowed_sub_admins: parseLimit(resData.allowed_sub_admins) ?? prev.allowed_sub_admins,
-              current_sub_admins: parseLimit(resData.current_sub_admins) ?? prev.current_sub_admins,
-              remaining_sub_admins: parseLimit(resData.remaining_sub_admins) ?? prev.remaining_sub_admins,
-            }));
-          }
-        }
+        // Optimistically construct the newly created operator record
+        const newRecord = {
+          id: response?.data?.id || response?.sub_admin_id || `temp-${Date.now()}`,
+          username: formData.username,
+          email: formData.email,
+          phone_no: formData.phone_no,
+          company_name: formData.company_name,
+          office_address: formData.office_address,
+          gst: formData.gst,
+          brand_id: activeBrandId,
+          brand_name: activeBrandName,
+          status: "Active",
+          status_text: "Active",
+          ...(response?.data || {}),
+        };
 
-        // Authoritative refresh: fetch latest list and limits from backend
-        await fetchSubAdmins(true);
+        // Instantly prepend new operator to local list (0ms latency UI update)
+        setSubAdmins((prev) => {
+          const exists = prev.some((item) => String(item.id) === String(newRecord.id));
+          if (exists) return prev;
+          const nextList = [newRecord, ...prev];
+
+          // Instantly update capacity limit counters in sync with the new list
+          setLimits((prevLimits) => {
+            const limAllowed = prevLimits.allowed_sub_admins;
+            const limCurrent = nextList.length;
+            const limRemaining =
+              limAllowed !== null ? Math.max(0, limAllowed - limCurrent) : (prevLimits.remaining_sub_admins !== null ? Math.max(0, prevLimits.remaining_sub_admins - 1) : null);
+            return {
+              ...prevLimits,
+              current_sub_admins: limCurrent,
+              remaining_sub_admins: limRemaining,
+            };
+          });
+
+          return nextList;
+        });
+
+        // Background reconcile from server to guarantee sync
+        fetchSubAdmins(true).catch(() => {});
 
         return response;
       } catch (err) {
-        // If server rejects because limit reached or other backend error, refresh to stay in sync with server state
+        // If server rejects, refresh to reconcile with server state
         await fetchSubAdmins(true).catch(() => {});
         throw err;
       }
     },
-    [brandId, limits, isLimitsLoaded, fetchSubAdmins]
+    [brandId, limits, subAdmins.length, isLimitsLoaded, fetchSubAdmins]
   );
 
   const updateSubAdminStatus = useCallback(
@@ -288,20 +314,34 @@ export const useSubAdmins = () => {
       );
     },
     deleteSubAdminLocal: (id) => {
-      setSubAdmins((prev) => prev.filter((item) => String(item.id) !== String(id)));
-      setLimits((prev) => ({
-        ...prev,
-        current_sub_admins:
-          prev.current_sub_admins !== null ? Math.max(0, prev.current_sub_admins - 1) : null,
-        remaining_sub_admins:
-          prev.remaining_sub_admins !== null ? prev.remaining_sub_admins + 1 : null,
-      }));
+      setSubAdmins((prev) => {
+        const nextList = prev.filter((item) => String(item.id) !== String(id));
+        setLimits((prevLimits) => {
+          const allowed = prevLimits.allowed_sub_admins;
+          const newCurrent = nextList.length;
+          const newRemaining =
+            allowed !== null
+              ? Math.max(0, allowed - newCurrent)
+              : prevLimits.remaining_sub_admins !== null
+              ? prevLimits.remaining_sub_admins + 1
+              : null;
+          return {
+            ...prevLimits,
+            current_sub_admins: newCurrent,
+            remaining_sub_admins: newRemaining,
+          };
+        });
+        return nextList;
+      });
     },
-    // Dynamic capacity limits from POST /get-subadmins
+    // Dynamic capacity limits
     limits,
     allowedSubAdmins: limits.allowed_sub_admins,
-    currentSubAdmins: limits.current_sub_admins,
-    remainingSubAdmins: limits.remaining_sub_admins,
+    currentSubAdmins: subAdmins.length,
+    remainingSubAdmins:
+      limits.allowed_sub_admins !== null
+        ? Math.max(0, limits.allowed_sub_admins - subAdmins.length)
+        : limits.remaining_sub_admins,
     isLimitsLoaded,
     brandId: limits.brand_id || brandId,
     brandName: limits.brand_name,

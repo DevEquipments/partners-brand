@@ -54,12 +54,7 @@ export const SubAdminDeleteModal = ({
 
         {/* Account Details Box */}
         <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5 font-mono text-[11px]">
-          <div className="flex justify-between">
-            <span className="text-slate-400 font-sans">Operator ID:</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200">
-              #{subAdmin.id}
-            </span>
-          </div>
+
           <div className="flex justify-between">
             <span className="text-slate-400 font-sans">Login Username:</span>
             <span className="font-semibold text-slate-800 dark:text-slate-200">

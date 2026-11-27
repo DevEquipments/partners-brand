@@ -45,7 +45,7 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
   const subAdminOptions = useMemo(() => {
     return subAdmins.map((admin) => ({
       value: String(admin.id),
-      label: `@${admin.username}${admin.company_name ? ` (${admin.company_name})` : ""} — ${admin.email || `ID #${admin.id}`}`,
+      label: `@${admin.username}${admin.company_name ? ` (${admin.company_name})` : ""}${admin.email ? ` — ${admin.email}` : ""}`,
       admin,
     }));
   }, [subAdmins]);
@@ -158,21 +158,13 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
               );
               return (
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                  <div className="grid grid-cols-2 sm:grid-cols-7 gap-4 text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs">
                     <div>
                       <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                        Sub Admin ID
+                        Username
                       </span>
-                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                        #{selectedSubAdmin.id}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                        Role ID
-                      </span>
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                        #{roleId}
+                      <span className="font-semibold text-slate-900 dark:text-white truncate block">
+                        @{selectedSubAdmin.username}
                       </span>
                     </div>
                     <div>
@@ -192,14 +184,6 @@ export const SubAdminPermissions = ({ initialSubAdminId: propSubAdminId, onBack 
                         >
                           {statusInfo.text}
                         </span>
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase font-semibold text-slate-400 block tracking-wider">
-                        Username
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white truncate block">
-                        @{selectedSubAdmin.username}
                       </span>
                     </div>
                     <div>

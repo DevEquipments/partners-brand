@@ -14,6 +14,9 @@ import {
 
 export { SUB_ADMIN_ACTIVITY_TYPES };
 
+// In-memory runtime activity list seeded with demo records
+let runtimeActivities = [...SUB_ADMIN_ACTIVITY_DEMO_DATA];
+
 export const subAdminActivityService = {
   /**
    * Indicates whether the service is currently running in Demo Mode.
@@ -29,7 +32,7 @@ export const subAdminActivityService = {
    * @returns {Array} List of activity records
    */
   getActivities(filters = {}) {
-    let records = [...SUB_ADMIN_ACTIVITY_DEMO_DATA];
+    let records = [...runtimeActivities];
 
     if (filters.action && filters.action !== "ALL") {
       records = records.filter(
@@ -56,7 +59,7 @@ export const subAdminActivityService = {
    * @returns {Object} Summary counts object
    */
   getActivitySummary(records = null) {
-    const list = records || SUB_ADMIN_ACTIVITY_DEMO_DATA;
+    const list = records || runtimeActivities;
     return {
       total: list.length,
       added: list.filter(
@@ -101,8 +104,8 @@ export const subAdminActivityService = {
     description,
     performedBy = "Brand Admin",
   }) {
-    return {
-      id: `demo-activity-${Date.now()}`,
+    const newRecord = {
+      id: `demo-activity-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       subAdminId: subAdminId ?? "N/A",
       subAdminUsername: subAdminUsername || "demo_operator",
       action: action || SUB_ADMIN_ACTIVITY_TYPES.EDIT,
@@ -111,6 +114,17 @@ export const subAdminActivityService = {
       createdAt: new Date().toISOString(),
       isDemo: true,
     };
+
+    runtimeActivities = [newRecord, ...runtimeActivities];
+    return newRecord;
+  },
+
+  /**
+   * Reset runtime activities to initial demo data
+   */
+  resetActivities() {
+    runtimeActivities = [...SUB_ADMIN_ACTIVITY_DEMO_DATA];
+    return runtimeActivities;
   },
 };
 

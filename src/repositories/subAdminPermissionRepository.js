@@ -39,10 +39,11 @@ export const getPremiumBrandPermissions = async (options = {}) => {
  * @returns {Promise<Object>} Backend API response
  */
 export const addPremiumBrandRolePermission = async (payload, options = {}) => {
-  let formData;
+  let requestData;
+  let headers = { ...(options.headers || {}) };
 
   if (typeof FormData !== "undefined" && payload instanceof FormData) {
-    formData = payload;
+    requestData = payload;
   } else {
     const rawRoleId = payload?.role_id ?? payload?.roleId;
 
@@ -50,22 +51,22 @@ export const addPremiumBrandRolePermission = async (payload, options = {}) => {
       throw new Error("Role ID is required to assign role permissions.");
     }
 
-    formData = new FormData();
-    formData.append("role_id", String(rawRoleId).trim());
-
     const names = payload?.permission_name ?? payload?.permissionNames ?? [];
-    const list = Array.isArray(names) ? names : [names].filter(Boolean);
+    const list = (Array.isArray(names) ? names : [names])
+      .map((n) => (typeof n === "string" ? n.trim() : n?.name || n?.slug || ""))
+      .filter(Boolean);
 
-    list.forEach((name) => {
-      if (name && typeof name === "string") {
-        formData.append("permission_name[]", name.trim());
-      }
-    });
+    requestData = {
+      role_id: String(rawRoleId).trim(),
+      permission_name: list,
+    };
+    headers["Content-Type"] = "application/json";
   }
 
   const response = await apiRequest({
     ...API_ENDPOINTS.addPremiumBrandRolePermission,
-    data: formData,
+    data: requestData,
+    headers,
     ...options,
   });
 
@@ -96,10 +97,11 @@ export const addPremiumBrandRolePermission = async (payload, options = {}) => {
  * @returns {Promise<Object>} Backend API response
  */
 export const deleteRolePermission = async (payload, options = {}) => {
-  let formData;
+  let requestData;
+  let headers = { ...(options.headers || {}) };
 
   if (typeof FormData !== "undefined" && payload instanceof FormData) {
-    formData = payload;
+    requestData = payload;
   } else {
     const rawRoleId = payload?.role_id ?? payload?.roleId;
     const rawName =
@@ -115,14 +117,17 @@ export const deleteRolePermission = async (payload, options = {}) => {
       throw new Error("Permission name is required to delete role permission.");
     }
 
-    formData = new FormData();
-    formData.append("role_id", String(rawRoleId).trim());
-    formData.append("permission_name", String(rawName).trim());
+    requestData = {
+      role_id: String(rawRoleId).trim(),
+      permission_name: String(rawName).trim(),
+    };
+    headers["Content-Type"] = "application/json";
   }
 
   const response = await apiRequest({
     ...API_ENDPOINTS.deleteRolePermission,
-    data: formData,
+    data: requestData,
+    headers,
     ...options,
   });
 
