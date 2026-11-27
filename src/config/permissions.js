@@ -84,6 +84,7 @@ export const PERMISSIONS = {
   SUBADMINS_MANAGE: "subadmins:manage",
   TERRITORIES_MANAGE: "territories:manage",
   ASSIGNMENT_MANAGE: "assignment:manage",
+  PERMISSIONS_MANAGE: "permissions:manage",
 
   // Profile & Settings
   PROFILE_VIEW: "profile:view",
@@ -101,6 +102,7 @@ export const MODULES = {
   CRM_PIPELINE: "crm_pipeline",
   QUOTATIONS: "quotations",
   TEAM: "team",
+  PERMISSIONS: "permissions",
   REPORTS: "reports",
   PROFILE: "profile",
 };
@@ -116,6 +118,7 @@ export const MODULE_PERMISSION_MAP = {
   [MODULES.CRM_PIPELINE]: PERMISSIONS.LEADS_VIEW,
   [MODULES.QUOTATIONS]: PERMISSIONS.QUOTATIONS_VIEW,
   [MODULES.TEAM]: PERMISSIONS.SUBADMINS_MANAGE,
+  [MODULES.PERMISSIONS]: PERMISSIONS.PERMISSIONS_MANAGE,
   [MODULES.REPORTS]: PERMISSIONS.REPORTS_VIEW,
   [MODULES.PROFILE]: PERMISSIONS.PROFILE_VIEW,
 };

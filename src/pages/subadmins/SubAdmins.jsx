@@ -127,7 +127,7 @@ export const SubAdmins = () => {
     editSubAdminLocal,
     deleteSubAdminLocal,
     allowedSubAdmins,
-    currentSubAdmins,
+    currentSubAdmins: _currentSubAdmins,
     remainingSubAdmins,
     isLimitsLoaded,
     limits,
@@ -138,7 +138,15 @@ export const SubAdmins = () => {
   const activeBrandId = limits?.brand_id || hookBrandId || authBrandId;
   const activeBrandName = limits?.brand_name || hookBrandName || authBrandName;
 
-  const isLimitReached = isLimitsLoaded && remainingSubAdmins !== null && remainingSubAdmins <= 0;
+  // Real-time reactive capacity metrics driven by authoritative subAdmins array
+  const liveAllowed = allowedSubAdmins ?? limits.allowed_sub_admins;
+  const liveCurrent = subAdmins.length;
+  const liveRemaining =
+    liveAllowed !== null
+      ? Math.max(0, liveAllowed - liveCurrent)
+      : (remainingSubAdmins !== null ? remainingSubAdmins : null);
+
+  const isLimitReached = liveRemaining !== null && liveRemaining <= 0;
 
   // Active Admin View Tab: "directory" | "activity"
   const [activeAdminTab, setActiveAdminTab] = useState("directory");
@@ -153,7 +161,7 @@ export const SubAdmins = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubAdmin, setSelectedSubAdmin] = useState(null);
-  const [viewMode, setViewMode] = useState(urlView || (urlSubAdminId ? "access" : "list"));
+  const [viewMode, setViewMode] = useState(urlView || (urlSubAdminId ? "detail" : "list"));
 
   // Add Sub Admin Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -189,15 +197,15 @@ export const SubAdmins = () => {
     },
     onSubmit: async (formValues) => {
       // 1. Confirm limit information has loaded successfully
-      if (!isLimitsLoaded && remainingSubAdmins === null) {
+      if (!isLimitsLoaded && liveRemaining === null) {
         throw new Error(
           "Account capacity information is still verifying with the server. Please wait a moment."
         );
       }
 
-      // 2. Check whether remaining_sub_admins is greater than zero
-      if (remainingSubAdmins !== null && remainingSubAdmins <= 0) {
-        const limitMsg = `Brand has reached its Sub Admin account limit (${allowedSubAdmins ?? "maximum"} allowed). 0 slots remaining.`;
+      // 2. Check whether liveRemaining is greater than zero
+      if (liveRemaining !== null && liveRemaining <= 0) {
+        const limitMsg = `Brand has reached its Sub Admin account limit (${liveAllowed ?? "maximum"} allowed). 0 slots remaining.`;
         toast.error(limitMsg, { id: "subadmin-limit-exceeded" });
         throw new Error(limitMsg);
       }
@@ -219,6 +227,16 @@ export const SubAdmins = () => {
         email: formValues.email.trim().toLowerCase(),
       });
 
+      // Record activity immediately
+      subAdminActivityService.logAction({
+        subAdminId: response?.data?.id || "new",
+        subAdminUsername: formValues.username.trim(),
+        action: "ADD",
+        description: `Sub Admin @${formValues.username.trim()} created.`,
+        performedBy: "Brand Admin",
+      });
+      setActivities(subAdminActivityService.getActivities());
+
       const successMsg = response?.message || "Sub-admin created successfully.";
       toast.success(successMsg, { id: "subadmin-create-success" });
       setIsCreateModalOpen(false);
@@ -234,7 +252,7 @@ export const SubAdmins = () => {
   const handleOpenCreate = () => {
     if (isLimitReached) {
       toast.error(
-        `Cannot add Sub Admin: Brand has reached its account limit (${allowedSubAdmins ?? "—"} allowed).`,
+        `Cannot add Sub Admin: Brand has reached its account limit (${liveAllowed ?? "—"} allowed).`,
         { id: "subadmin-limit-reached" }
       );
       return;
@@ -253,6 +271,16 @@ export const SubAdmins = () => {
 
     try {
       await updateSubAdminStatus(member.id, nextStatus);
+
+      // Record activity immediately
+      subAdminActivityService.logAction({
+        subAdminId: member.id,
+        subAdminUsername: member.username,
+        action: nextStatus === 1 ? "ACTIVATE" : "DEACTIVATE",
+        description: `Sub Admin @${member.username} account ${nextStatus === 1 ? "activated" : "deactivated"}.`,
+        performedBy: "Brand Admin",
+      });
+      setActivities(subAdminActivityService.getActivities());
     } catch {
       // Error toast is handled inside useSubAdmins hook
     }
@@ -260,10 +288,31 @@ export const SubAdmins = () => {
 
   const handleEditSave = async (updatedData) => {
     editSubAdminLocal(updatedData.id, updatedData);
+
+    // Record activity immediately
+    subAdminActivityService.logAction({
+      subAdminId: updatedData.id,
+      subAdminUsername: updatedData.username,
+      action: "EDIT",
+      description: `Sub Admin @${updatedData.username} profile updated.`,
+      performedBy: "Brand Admin",
+    });
+    setActivities(subAdminActivityService.getActivities());
   };
 
   const handleDeleteConfirm = async (target) => {
     deleteSubAdminLocal(target.id);
+
+    // Record activity immediately
+    subAdminActivityService.logAction({
+      subAdminId: target.id,
+      subAdminUsername: target.username,
+      action: "DELETE",
+      description: `Sub Admin @${target.username} deleted.`,
+      performedBy: "Brand Admin",
+    });
+    setActivities(subAdminActivityService.getActivities());
+
     if (selectedSubAdmin?.id === target.id) {
       setSelectedSubAdmin(null);
       setViewMode("list");
@@ -281,8 +330,9 @@ export const SubAdmins = () => {
       return subAdmins;
     }
     const q = searchQuery.toLowerCase().trim();
-    return subAdmins.filter((member) => {
-      const matchId = String(member.id).includes(q);
+    return subAdmins.filter((member, index) => {
+      const serialNo = String(index + 1);
+      const matchSerial = serialNo === q || serialNo.includes(q);
       const matchUser = (member.username || "").toLowerCase().includes(q);
       const matchEmail = (member.email || "").toLowerCase().includes(q);
       const matchCompany = (member.company_name || "").toLowerCase().includes(q);
@@ -298,7 +348,7 @@ export const SubAdmins = () => {
         (isActive === true ? "active" : isActive === false ? "inactive deactive" : "").includes(q);
 
       return (
-        matchId ||
+        matchSerial ||
         matchUser ||
         matchEmail ||
         matchCompany ||
@@ -317,7 +367,7 @@ export const SubAdmins = () => {
   };
 
   // Keep viewMode in sync when URL query params change
-  const effectiveViewMode = urlView || (urlSubAdminId ? "access" : viewMode);
+  const effectiveViewMode = urlView || (urlSubAdminId ? (urlView === "access" ? "access" : "detail") : viewMode);
 
   // Sync selectedSubAdmin when URL parameter changes
   const targetUrlId = urlSubAdminId;
@@ -358,16 +408,21 @@ export const SubAdmins = () => {
       <SubAdminPermissions
         initialSubAdminId={urlSubAdminId || selectedSubAdmin?.id}
         onBack={() => {
-          setViewMode("list");
-          setSelectedSubAdmin(null);
-          setSearchParams({});
+          if (selectedSubAdmin) {
+            setViewMode("detail");
+            setSearchParams({ subAdminId: selectedSubAdmin.id, view: "detail" });
+          } else {
+            setViewMode("list");
+            setSelectedSubAdmin(null);
+            setSearchParams({});
+          }
         }}
       />
     );
   }
 
   // View: Sub Admin Detail Overview
-  if (viewMode === "detail" && currentSubAdmin) {
+  if (effectiveViewMode === "detail" && currentSubAdmin) {
     return (
       <SubAdminDetail
         subAdmin={currentSubAdmin}
@@ -394,12 +449,14 @@ export const SubAdmins = () => {
   // Table Columns Definition according to prompt requirements
   const columns = [
     {
-      key: "id",
+      key: "serial_no",
       label: "ID",
-      width: "w-16",
-      render: (id) => (
+      width: "w-14",
+      align: "center",
+      className: "text-center",
+      render: (_val, _row, idx) => (
         <span className="font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">
-          #{id}
+          {idx + 1}
         </span>
       ),
     },
@@ -407,13 +464,22 @@ export const SubAdmins = () => {
       key: "username",
       label: "Username",
       className: "min-w-[160px]",
-      render: (username) => (
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-orange-600/10 text-orange-600 dark:text-orange-400 font-bold flex items-center justify-center text-xs shrink-0 border border-orange-500/20">
+      render: (username, member) => (
+        <div
+          className="flex items-center gap-2.5 min-w-0 cursor-pointer group"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedSubAdmin(member);
+            setViewMode("detail");
+            setSearchParams({ subAdminId: member.id, view: "detail" });
+          }}
+          title="Click to view operator profile"
+        >
+          <div className="w-8 h-8 rounded-lg bg-orange-600/10 text-orange-600 dark:text-orange-400 font-bold flex items-center justify-center text-xs shrink-0 border border-orange-500/20 group-hover:bg-orange-500/20 transition-colors">
             {username?.[0]?.toUpperCase() || "S"}
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-slate-900 dark:text-white truncate">
+            <p className="font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
               @{username}
             </p>
           </div>
@@ -525,16 +591,17 @@ export const SubAdmins = () => {
               e.stopPropagation();
               setSelectedSubAdmin(member);
               setViewMode("detail");
+              setSearchParams({ subAdminId: member.id, view: "detail" });
             }}
             icon={Eye}
-            title="View details"
+            title="View operator profile"
           >
-            View
+            Profile
           </Button>
 
           <Button
             type="button"
-            variant="primary"
+            variant="outline"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
@@ -543,9 +610,9 @@ export const SubAdmins = () => {
               setSearchParams({ subAdminId: member.id, view: "access" });
             }}
             icon={ShieldCheck}
-            title="Manage Sub Admin module access"
+            title="Configure operator permissions"
           >
-            Access
+            Permissions
           </Button>
 
           <button
@@ -607,7 +674,7 @@ export const SubAdmins = () => {
             {isLimitReached && (
               <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-900/60 px-2.5 py-1 rounded-md flex items-center gap-1.5 shrink-0">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span>Limit reached ({allowedSubAdmins ?? "—"} max)</span>
+                <span>Limit reached ({liveAllowed ?? "—"} max)</span>
               </span>
             )}
             <Button
@@ -633,7 +700,7 @@ export const SubAdmins = () => {
       {isAdmin && (
         <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-0.5 overflow-x-auto">
           {[
-            { key: "directory", label: "Sub Admins", icon: Users, count: subAdmins.length },
+            { key: "directory", label: "Sub Admins", icon: Users, count: liveCurrent },
             { key: "activity", label: "Activity History", icon: History, count: activities.length },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -703,9 +770,9 @@ export const SubAdmins = () => {
               <StatCard
                 icon={ShieldCheck}
                 title="Allowed Sub Admins"
-                value={allowedSubAdmins !== null ? allowedSubAdmins : "—"}
+                value={liveAllowed !== null ? liveAllowed : "—"}
                 subtitle={
-                  allowedSubAdmins !== null
+                  liveAllowed !== null
                     ? "Maximum permitted accounts"
                     : "Quota limit unavailable"
                 }
@@ -714,35 +781,31 @@ export const SubAdmins = () => {
               <StatCard
                 icon={Users}
                 title="Current Sub Admins"
-                value={currentSubAdmins !== null ? currentSubAdmins : (subAdmins ? subAdmins.length : "—")}
-                subtitle={
-                  currentSubAdmins !== null
-                    ? "Active operator accounts"
-                    : "Active accounts"
-                }
+                value={liveCurrent}
+                subtitle="Active operator accounts"
                 color="orange"
               />
               <StatCard
                 className="sm:col-span-2 lg:col-span-1"
                 icon={UserPlus}
                 title="Remaining Slots"
-                value={remainingSubAdmins !== null ? remainingSubAdmins : "—"}
+                value={liveRemaining !== null ? liveRemaining : "—"}
                 subtitle={
-                  remainingSubAdmins === null
+                  liveRemaining === null
                     ? "Slot availability unavailable"
-                    : remainingSubAdmins <= 0
+                    : liveRemaining <= 0
                     ? "Capacity limit reached"
-                    : `${remainingSubAdmins} slot${remainingSubAdmins === 1 ? "" : "s"} available`
+                    : `${liveRemaining} slot${liveRemaining === 1 ? "" : "s"} available`
                 }
                 badge={
-                  remainingSubAdmins === null
+                  liveRemaining === null
                     ? "Unavailable"
-                    : remainingSubAdmins <= 0
+                    : liveRemaining <= 0
                     ? "Quota Full"
                     : "Available"
                 }
                 color={
-                  remainingSubAdmins !== null && remainingSubAdmins <= 0
+                  liveRemaining !== null && liveRemaining <= 0
                     ? "slate"
                     : "emerald"
                 }
@@ -756,7 +819,7 @@ export const SubAdmins = () => {
             onSearchChange={setSearchQuery}
             searchPlaceholder="Search by ID, username, email, company, or address..."
             tabs={[
-              { value: "all", label: "All Sub Admins", count: subAdmins.length },
+              { value: "all", label: "All Sub Admins", count: liveCurrent },
             ]}
             activeTab="all"
             onTabChange={() => {}}
@@ -788,8 +851,8 @@ export const SubAdmins = () => {
               rowKey="id"
               onRowClick={(member) => {
                 setSelectedSubAdmin(member);
-                setViewMode("access");
-                setSearchParams({ subAdminId: member.id, view: "access" });
+                setViewMode("detail");
+                setSearchParams({ subAdminId: member.id, view: "detail" });
               }}
             />
           )}

@@ -84,7 +84,11 @@ export const subAdminRepository = {
     return apiRequest({
       ...API_ENDPOINTS.subAdminSidebar,
       data: {
-        role_id: roleId,
+        role_id: String(roleId).trim(),
+      },
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
       },
       ...options,
     });

@@ -22,12 +22,17 @@ export const PermissionProvider = ({ children }) => {
   const [isDefinitionsLoading, setIsDefinitionsLoading] = useState(() => Boolean(isAdmin && token));
   const [definitionsError, setDefinitionsError] = useState(null);
 
+  // Admin assigned permissions state from POST /sub-admin-sidebar
+  const [adminAssignedPermissions, setAdminAssignedPermissions] = useState([]);
+  const [isAdminAssignedLoading, setIsAdminAssignedLoading] = useState(() => Boolean(isAdmin && token));
+  const [adminAssignedError, setAdminAssignedError] = useState(null);
+
   // Sub Admin dynamic sidebar state from POST /sub-admin-sidebar
   const [subAdminSidebarItems, setSubAdminSidebarItems] = useState([]);
   const [isSubAdminSidebarLoading, setIsSubAdminSidebarLoading] = useState(() => Boolean(isSubAdmin && token));
   const [subAdminSidebarError, setSubAdminSidebarError] = useState(null);
 
-  // Main Admin: Fetch permission definitions
+  // Main Admin: Fetch permission definitions and Admin's assigned permissions
   useEffect(() => {
     let isMounted = true;
 
@@ -37,20 +42,39 @@ export const PermissionProvider = ({ children }) => {
 
     const loadAdmin = async () => {
       try {
-        const defs = await permissionManagementService.fetchPermissionDefinitions();
+        setIsDefinitionsLoading(true);
+        setIsAdminAssignedLoading(true);
+
+        const activeRoleId = extractRoleIdFromRecord(user);
+
+        const [defs, assigned] = await Promise.all([
+          permissionManagementService.fetchPermissionDefinitions().catch((err) => {
+            console.warn("Failed to fetch admin permission definitions:", err.message);
+            return [];
+          }),
+          activeRoleId
+            ? subAdminSidebarService.fetchSubAdminSidebar({ role_id: activeRoleId }).catch((err) => {
+                console.warn("Failed to fetch admin assigned sidebar permissions:", err.message);
+                return [];
+              })
+            : Promise.resolve([]),
+        ]);
+
         if (isMounted) {
           setAdminPermissionDefinitions(Array.isArray(defs) ? defs : []);
           setDefinitionsError(null);
+          setAdminAssignedPermissions(Array.isArray(assigned) ? assigned : []);
+          setAdminAssignedError(null);
         }
       } catch (err) {
         if (isMounted) {
-          console.warn("Failed to fetch admin permission definitions:", err.message);
+          console.warn("Failed to load admin permission data:", err.message);
           setDefinitionsError(err.message || "Failed to load permissions");
-          setAdminPermissionDefinitions([]);
         }
       } finally {
         if (isMounted) {
           setIsDefinitionsLoading(false);
+          setIsAdminAssignedLoading(false);
         }
       }
     };
@@ -60,7 +84,7 @@ export const PermissionProvider = ({ children }) => {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, isAdmin, token]);
+  }, [isAuthenticated, isAdmin, token, user]);
 
   // Sub Admin: Dynamically resolve role ID from authenticated user
   useEffect(() => {
@@ -116,36 +140,60 @@ export const PermissionProvider = ({ children }) => {
       setAdminPermissionDefinitions([]);
       setIsDefinitionsLoading(false);
       setDefinitionsError(null);
+      setAdminAssignedPermissions([]);
+      setIsAdminAssignedLoading(false);
+      setAdminAssignedError(null);
       setSubAdminSidebarItems([]);
       setIsSubAdminSidebarLoading(false);
       setSubAdminSidebarError(null);
     }
   }
 
-  // Refresh Admin definitions
+  // Refresh Admin definitions and assigned permissions
   const refreshAdminPermissions = useCallback(async () => {
     if (!isAdmin || !token) {
       setAdminPermissionDefinitions([]);
       setIsDefinitionsLoading(false);
-      return [];
+      setAdminAssignedPermissions([]);
+      setIsAdminAssignedLoading(false);
+      return { definitions: [], assigned: [] };
     }
 
     setIsDefinitionsLoading(true);
+    setIsAdminAssignedLoading(true);
     setDefinitionsError(null);
+    setAdminAssignedError(null);
+
+    const activeRoleId = extractRoleIdFromRecord(user);
 
     try {
-      const defs = await permissionManagementService.fetchPermissionDefinitions();
-      setAdminPermissionDefinitions(Array.isArray(defs) ? defs : []);
-      return defs;
-    } catch (err) {
-      console.warn("Failed to refresh admin permission definitions:", err.message);
-      setDefinitionsError(err.message || "Failed to load permissions");
-      setAdminPermissionDefinitions([]);
-      return [];
+      const [defs, assigned] = await Promise.all([
+        permissionManagementService.fetchPermissionDefinitions().catch((err) => {
+          console.warn("Failed to refresh admin permission definitions:", err.message);
+          setDefinitionsError(err.message || "Failed to load permissions");
+          return [];
+        }),
+        activeRoleId
+          ? subAdminSidebarService.fetchSubAdminSidebar({ role_id: activeRoleId }).catch((err) => {
+              console.warn("Failed to refresh admin assigned sidebar permissions:", err.message);
+              setAdminAssignedError(err.message || "Failed to load assigned permissions");
+              return [];
+            })
+          : Promise.resolve([]),
+      ]);
+
+      const normalizedDefs = Array.isArray(defs) ? defs : [];
+      const normalizedAssigned = Array.isArray(assigned) ? assigned : [];
+
+      setAdminPermissionDefinitions(normalizedDefs);
+      setAdminAssignedPermissions(normalizedAssigned);
+
+      return { definitions: normalizedDefs, assigned: normalizedAssigned };
     } finally {
       setIsDefinitionsLoading(false);
+      setIsAdminAssignedLoading(false);
     }
-  }, [isAdmin, token]);
+  }, [isAdmin, token, user]);
 
   // Refresh Sub Admin sidebar items
   const refreshSubAdminSidebar = useCallback(async () => {
@@ -184,6 +232,9 @@ export const PermissionProvider = ({ children }) => {
     adminPermissionDefinitions,
     isDefinitionsLoading,
     definitionsError,
+    adminAssignedPermissions,
+    isAdminAssignedLoading,
+    adminAssignedError,
     refreshAdminPermissions,
     subAdminSidebarItems,
     isSubAdminSidebarLoading,

@@ -13,6 +13,9 @@ export const usePermissions = () => {
     adminPermissionDefinitions = [],
     isDefinitionsLoading = false,
     definitionsError = null,
+    adminAssignedPermissions = [],
+    isAdminAssignedLoading = false,
+    adminAssignedError = null,
     refreshAdminPermissions,
     subAdminSidebarItems = [],
     isSubAdminSidebarLoading = false,
@@ -23,20 +26,43 @@ export const usePermissions = () => {
   const isAdmin = role === "ADMIN";
   const isSubAdmin = role === "SUB_ADMIN";
 
-  // Sub Admin permissions list provided by sub-admin-sidebar API, stored assignments, user profile, or backend
+  // Dynamic user permissions list derived strictly from role and backend assignments
   const userPermissions = useMemo(() => {
+    const resolved = new Set();
+    // Basic dashboard & profile always available
+    resolved.add(PERMISSIONS.DASHBOARD_VIEW);
+    resolved.add(PERMISSIONS.PROFILE_VIEW);
+
     if (isAdmin) {
-      return Object.values(PERMISSIONS);
+      // Core Admin capabilities
+      resolved.add(PERMISSIONS.PROFILE_EDIT);
+      resolved.add(PERMISSIONS.SUBADMINS_MANAGE);
+      resolved.add(PERMISSIONS.TERRITORIES_MANAGE);
+      resolved.add(PERMISSIONS.ASSIGNMENT_MANAGE);
+      resolved.add(PERMISSIONS.PERMISSIONS_MANAGE);
+      resolved.add(PERMISSIONS.REPORTS_VIEW);
+      resolved.add(PERMISSIONS.REPORTS_CREATE);
+      resolved.add(PERMISSIONS.REPORTS_EDIT);
+      resolved.add(PERMISSIONS.REPORTS_DELETE);
+      resolved.add(PERMISSIONS.REPORTS_EXPORT);
+
+      // If backend provides assigned permissions for Admin, resolve them
+      if (Array.isArray(adminAssignedPermissions) && adminAssignedPermissions.length > 0) {
+        adminAssignedPermissions.forEach((item) => {
+          const actions = resolveSlugToActions(item);
+          actions.forEach((act) => resolved.add(act));
+        });
+      } else {
+        // Fallback: If no custom restriction assigned to Admin, grant CRM permissions
+        Object.values(PERMISSIONS).forEach((perm) => resolved.add(perm));
+      }
+
+      return Array.from(resolved);
     }
 
     if (!isSubAdmin) {
-      return [];
+      return Array.from(resolved);
     }
-
-    const resolved = new Set();
-    // Always allow basic personal dashboard and profile
-    resolved.add(PERMISSIONS.DASHBOARD_VIEW);
-    resolved.add(PERMISSIONS.PROFILE_VIEW);
 
     // Strictly resolve from dynamically permitted items from POST /sub-admin-sidebar
     if (Array.isArray(subAdminSidebarItems) && subAdminSidebarItems.length > 0) {
@@ -47,30 +73,48 @@ export const usePermissions = () => {
     }
 
     return Array.from(resolved);
-  }, [isAdmin, isSubAdmin, subAdminSidebarItems]);
+  }, [isAdmin, isSubAdmin, adminAssignedPermissions, subAdminSidebarItems]);
 
   const hasPermission = (permissionKey) => {
-    if (isAdmin) return true;
     if (!permissionKey) return true;
     return userPermissions.includes(permissionKey);
   };
 
   const canAccessModule = (moduleKey) => {
-    if (isAdmin) return true;
-    if (
-      moduleKey === MODULES.TEAM ||
-      moduleKey === MODULES.CRM_UNASSIGNED ||
-      moduleKey === MODULES.REPORTS
-    ) {
-      return false; // Strictly Admin only
-    }
-
     // Basic account modules always accessible
     if (moduleKey === MODULES.DASHBOARD || moduleKey === MODULES.PROFILE) {
       return true;
     }
 
+    if (isAdmin) {
+      // Primary administrative modules always accessible to Admin
+      if (
+        moduleKey === MODULES.TEAM ||
+        moduleKey === MODULES.PERMISSIONS ||
+        moduleKey === MODULES.CRM_UNASSIGNED ||
+        moduleKey === MODULES.REPORTS
+      ) {
+        return true;
+      }
+
+      // If backend has assigned specific CRM modules for this Admin, respect them
+      if (Array.isArray(adminAssignedPermissions) && adminAssignedPermissions.length > 0) {
+        return hasModulePermission(adminAssignedPermissions, moduleKey);
+      }
+
+      return true;
+    }
+
     if (isSubAdmin) {
+      if (
+        moduleKey === MODULES.TEAM ||
+        moduleKey === MODULES.PERMISSIONS ||
+        moduleKey === MODULES.CRM_UNASSIGNED ||
+        moduleKey === MODULES.REPORTS
+      ) {
+        return false; // Strictly Admin only
+      }
+
       // While sub-admin sidebar items are loading, prevent unauthorized flash/access
       if (isSubAdminSidebarLoading) {
         return false;
@@ -119,6 +163,9 @@ export const usePermissions = () => {
     adminPermissionDefinitions,
     isDefinitionsLoading,
     definitionsError,
+    adminAssignedPermissions,
+    isAdminAssignedLoading,
+    adminAssignedError,
     refreshAdminPermissions,
     subAdminSidebarItems,
     isSubAdminSidebarLoading,

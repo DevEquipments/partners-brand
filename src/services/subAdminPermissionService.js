@@ -1,5 +1,6 @@
 import { subAdminPermissionRepository } from "../repositories/subAdminPermissionRepository";
 import { subAdminSidebarService } from "./subAdminSidebarService";
+import { resolveSlugToModule } from "../utils/permissionResolver";
 
 /**
  * Resolves the role ID for a Sub Admin record.
@@ -26,7 +27,7 @@ export const resolveRoleId = (subAdmin) => {
 
 /**
  * Maps dynamic permission definitions into a boolean toggle map based on backend permissions.
- * Matches by exact canonical permission name or slug.
+ * Matches by exact canonical permission name, slug, alphanumeric normalization, or resolved CRM module.
  *
  * @param {Array<Object>} definitions - Definitions [{ id, name, slug }]
  * @param {Array<string|Object>} rawPermissions - Server permissions array
@@ -35,22 +36,55 @@ export const resolveRoleId = (subAdmin) => {
 export const buildAssignedPermissionsMap = (definitions = [], rawPermissions = []) => {
   const result = {};
 
-  const rawSet = new Set(
-    (rawPermissions || []).map((p) => {
-      if (typeof p === "string") return p.toLowerCase().trim();
-      return (p?.name || p?.slug || "").toLowerCase().trim();
+  const cleanList = (rawPermissions || [])
+    .map((p) => {
+      const str = typeof p === "string" ? p : p?.name || p?.slug || p?.permission_name || "";
+      return {
+        raw: str.trim(),
+        lower: str.toLowerCase().trim(),
+        alphanumeric: str.toLowerCase().replace(/[^a-z0-9]/g, ""),
+        module: resolveSlugToModule(str),
+      };
     })
-  );
+    .filter((item) => item.lower !== "");
 
   definitions.forEach((def) => {
-    const slugLower = (def.slug || "").toLowerCase().trim();
-    const nameLower = (def.name || "").toLowerCase().trim();
+    const defSlugLower = (def.slug || "").toLowerCase().trim();
+    const defNameLower = (def.name || "").toLowerCase().trim();
+    const defSlugAlpha = defSlugLower.replace(/[^a-z0-9]/g, "");
+    const defNameAlpha = defNameLower.replace(/[^a-z0-9]/g, "");
+    const defModule = resolveSlugToModule(def.slug || def.name);
 
-    if (rawSet.size > 0) {
-      result[def.slug] = rawSet.has(nameLower) || rawSet.has(slugLower);
-    } else {
+    if (cleanList.length === 0) {
       result[def.slug] = false;
+      return;
     }
+
+    const isMatched = cleanList.some((item) => {
+      // 1. Exact case-insensitive match on name or slug
+      if (item.lower === defSlugLower || item.lower === defNameLower) return true;
+      // 2. Alphanumeric normalized match
+      if (
+        (defSlugAlpha && item.alphanumeric === defSlugAlpha) ||
+        (defNameAlpha && item.alphanumeric === defNameAlpha)
+      ) {
+        return true;
+      }
+      // 3. Module match (e.g. "Customer Enquiry" resolves to "crm_enquiries", "enquiries" resolves to "crm_enquiries")
+      if (defModule && item.module && defModule === item.module) {
+        return true;
+      }
+      // 4. Substring containment if length >= 4 (e.g., "quotes" in "feature_equipment_quotes")
+      if (
+        (item.alphanumeric.length >= 4 && defSlugAlpha.includes(item.alphanumeric)) ||
+        (defSlugAlpha.length >= 4 && item.alphanumeric.includes(defSlugAlpha))
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    result[def.slug] = isMatched;
   });
 
   return result;

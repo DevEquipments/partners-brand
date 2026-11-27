@@ -7,6 +7,7 @@ import {
 import { subAdminService } from "../services/subAdminService";
 import { useBrand } from "./useBrand";
 import { getApiErrorMessage } from "../utils/errorHandler";
+import { subAdminActivityService } from "../services/subAdminActivityService";
 import toast from "react-hot-toast";
 
 /**
@@ -68,26 +69,21 @@ export const useSubAdminPermissions = (initialSubAdminId = null) => {
       setDefinitions(defs);
       setSubAdmins(subAdminsList);
 
-      // Prioritize explicit initialSubAdminId, then current selectedSubAdminId, then first available
-      let targetAdmin = null;
-      if (initialSubAdminId) {
-        targetAdmin = subAdminsList.find((m) => String(m.id) === String(initialSubAdminId));
-      }
-      if (!targetAdmin && selectedSubAdminId) {
-        targetAdmin = subAdminsList.find((m) => String(m.id) === String(selectedSubAdminId));
-      }
-      if (!targetAdmin && subAdminsList.length > 0) {
-        targetAdmin = subAdminsList[0];
-      }
-
-      const targetId = targetAdmin ? String(targetAdmin.id) : null;
-      setSelectedSubAdminId(targetId);
+      setSelectedSubAdminId((prevSelected) => {
+        if (initialSubAdminId && subAdminsList.some((m) => String(m.id) === String(initialSubAdminId))) {
+          return String(initialSubAdminId);
+        }
+        if (prevSelected && subAdminsList.some((m) => String(m.id) === String(prevSelected))) {
+          return prevSelected;
+        }
+        return subAdminsList.length > 0 ? String(subAdminsList[0].id) : null;
+      });
     } catch (err) {
       setError(getApiErrorMessage(err, "Unable to load permissions. Please try again."));
     } finally {
       setIsLoading(false);
     }
-  }, [brandId, initialSubAdminId, selectedSubAdminId]);
+  }, [brandId, initialSubAdminId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -276,10 +272,28 @@ export const useSubAdminPermissions = (initialSubAdminId = null) => {
 
           setPermissions({ ...freshMap });
           setOriginalPermissions({ ...freshMap });
+
+          // Record permission change activity
+          subAdminActivityService.logAction({
+            subAdminId: selectedSubAdmin.id,
+            subAdminUsername: selectedSubAdmin.username,
+            action: "PERMISSION_CHANGE",
+            description: `Permissions updated for Sub Admin @${selectedSubAdmin.username}.`,
+            performedBy: "Brand Admin",
+          });
         } catch {
           setOriginalPermissions({ ...permissions });
           toast.success(res?.message || "Permissions updated successfully.", {
             id: "subadmin-permissions-toast",
+          });
+
+          // Record permission change activity
+          subAdminActivityService.logAction({
+            subAdminId: selectedSubAdmin.id,
+            subAdminUsername: selectedSubAdmin.username,
+            action: "PERMISSION_CHANGE",
+            description: `Permissions updated for Sub Admin @${selectedSubAdmin.username}.`,
+            performedBy: "Brand Admin",
           });
         }
       } else {

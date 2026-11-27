@@ -22,13 +22,11 @@ export const PermissionRoute = ({ module, permission, adminOnly = false, childre
     );
   }
 
-  const isAllowed = isAdmin || (
-    module
-      ? canAccessModule(module)
-      : permission
-      ? hasPermission(permission)
-      : true
-  );
+  const isAllowed = module
+    ? canAccessModule(module)
+    : permission
+    ? hasPermission(permission)
+    : true;
 
   if (!isAllowed) {
     return (
@@ -36,7 +34,7 @@ export const PermissionRoute = ({ module, permission, adminOnly = false, childre
         <EmptyState
           icon={ShieldAlert}
           title="Access Restricted"
-          description="Your Sub Admin account does not currently have permission to access this module. Please contact your Brand Administrator for access."
+          description="Your account does not currently have permission to access this module. Please contact your administrator if you need access."
           actionLabel="Go to Dashboard"
           onAction={() => navigate("/dashboard")}
         />

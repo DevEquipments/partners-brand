@@ -18,6 +18,7 @@ import CustomerEnquiry from "../pages/CustomerEnquiry";
 import FeatureEquipmentQuotes from "../pages/FeatureEquipmentQuotes";
 import FollowUps from "../pages/crm/FollowUps";
 import SubAdmins from "../pages/subadmins/SubAdmins";
+import PermissionManagement from "../pages/permissions/PermissionManagement";
 import CRMReports from "../pages/reports/CRMReports";
 import Profile from "../pages/Profile";
 import NotFound from "../pages/NotFound";
@@ -97,9 +98,16 @@ export const AppRoutes = () => {
             }
           />
 
-          {/* Global Permission Definitions Management (Controlled by Master Admin - Disabled for Brand Admin) */}
-          <Route path="/permissions" element={<Navigate to="/sub-admins" replace />} />
-          <Route path="/permission-management" element={<Navigate to="/sub-admins" replace />} />
+          {/* Permission Management (Admin Only) */}
+          <Route
+            path="/permissions"
+            element={
+              <PermissionRoute module={MODULES.PERMISSIONS} adminOnly>
+                <PermissionManagement />
+              </PermissionRoute>
+            }
+          />
+          <Route path="/permission-management" element={<Navigate to="/permissions" replace />} />
           <Route path="/sub-admins/permissions" element={<Navigate to="/sub-admins?view=access" replace />} />
 
           {/* Reports & Analytics */}

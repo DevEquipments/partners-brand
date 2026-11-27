@@ -19,6 +19,10 @@ export const permissionManagementRepository = {
   async fetchPermissionDefinitions(options = {}) {
     const res = await apiRequest({
       ...API_ENDPOINTS.getPremiumBrandPermissions,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
       ...options,
     });
 
@@ -28,20 +32,47 @@ export const permissionManagementRepository = {
       throw err;
     }
 
-    const rawList = Array.isArray(res?.data)
-      ? res.data
-      : Array.isArray(res)
-      ? res
-      : Array.isArray(res?.permissions)
-      ? res.permissions
-      : [];
+    let rawList = [];
+    if (Array.isArray(res?.data)) {
+      rawList = res.data;
+    } else if (Array.isArray(res?.data?.permissions)) {
+      rawList = res.data.permissions;
+    } else if (Array.isArray(res?.data?.data)) {
+      rawList = res.data.data;
+    } else if (Array.isArray(res?.permissions)) {
+      rawList = res.permissions;
+    } else if (Array.isArray(res)) {
+      rawList = res;
+    } else if (res?.data && typeof res.data === "object") {
+      rawList = Object.values(res.data).filter(Boolean);
+    }
 
-    return rawList.map((item) => ({
-      id: item.id,
-      name: item.name,
-      slug: item.slug,
-      description: item.description || "",
-    }));
+    return rawList
+      .map((item, index) => {
+        if (typeof item === "string") {
+          const name = item.trim();
+          const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+          return {
+            id: index + 1,
+            name,
+            slug,
+            description: "",
+          };
+        }
+        const name = (item.name || item.permission_name || item.title || item.slug || "").trim();
+        const slug = (
+          item.slug ||
+          item.permission_slug ||
+          name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+        ).trim();
+        return {
+          id: item.id ?? index + 1,
+          name,
+          slug,
+          description: item.description || "",
+        };
+      })
+      .filter((item) => item.name);
   },
 
   /**

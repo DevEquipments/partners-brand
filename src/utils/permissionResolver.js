@@ -34,6 +34,9 @@ export const resolveSlugToModule = (slug = "") => {
   if (clean.includes("report")) {
     return MODULES.REPORTS;
   }
+  if (clean.includes("permission")) {
+    return MODULES.PERMISSIONS;
+  }
   if (clean.includes("profile")) {
     return MODULES.PROFILE;
   }
@@ -107,6 +110,7 @@ export const hasModulePermission = (userPermissions, moduleKey) => {
   // Strictly Main Admin only operations
   if (
     moduleKey === MODULES.TEAM ||
+    moduleKey === MODULES.PERMISSIONS ||
     moduleKey === MODULES.CRM_UNASSIGNED ||
     moduleKey === MODULES.REPORTS
   ) {

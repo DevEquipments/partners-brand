@@ -156,6 +156,14 @@ export const getNavigationSections = (role = "ADMIN", dynamicDefinitions = []) =
           adminOnly: true,
         },
         {
+          label: "Permissions",
+          path: "/permissions",
+          icon: Shield,
+          module: MODULES.PERMISSIONS,
+          permission: PERMISSIONS.PERMISSIONS_MANAGE,
+          adminOnly: true,
+        },
+        {
           label: "Brand Profile",
           path: "/profile",
           icon: Building2,
